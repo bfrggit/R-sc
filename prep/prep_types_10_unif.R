@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+#
 # prep_types_10_unif.R
 #
 # Created: 2018-06-07
@@ -14,6 +16,7 @@ lockBinding("CALI_T_RANGE", globalenv())
 num_cases <- 20L
 seed <- 4
 set.seed(seed)
+dir.create(path = "prep_RData", showWarnings = FALSE)
 
 source("lib/generator.R")
 
