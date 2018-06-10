@@ -89,6 +89,7 @@ for(jnd_types in 1L:NUM_CASES_USED_TYPES) {
                     value       = 1000000.0 / sum(res_case$intervals)
                 )
                 jnd_res <- jnd_res + 1L
+                stopifnot(jnd_res <= nrow(simu_res))
                 simu_res[jnd_res, ] <- c(
                     selector    = sel_name,
                     metric      = "cali_t_mean",
@@ -99,9 +100,10 @@ for(jnd_types in 1L:NUM_CASES_USED_TYPES) {
                             / sum(res_case$intervals)
                 )
                 jnd_res <- jnd_res + 1L
-                stopifnot(jnd_res <= nrow(simu_res))
             }
         }
     }
 }
+cat("\n")
+cat("Done!\n")
 save.image(file = "t_data/no_move_nodes.RData")
