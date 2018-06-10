@@ -59,7 +59,7 @@ get_post_ttnc <<- function(
             nrow = NUM_NODES,
             byrow = TRUE
         ),
-        no = ttnc
+        no = ttnc_before
     ) # RETURN
 }
 

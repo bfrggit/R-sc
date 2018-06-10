@@ -55,9 +55,9 @@ run_no_move <<- function(
     for(it in 1L:num_iters) {
         # call the sensor selection solver
         selected_sensors <- selector_f(
-            st_period,
-            st_cali_t,
-            ttnc
+            st_period   = st_period,
+            st_cali_t   = st_cali_t,
+            ttnc_before = ttnc
         )
 
         if(paranoid) {
@@ -77,7 +77,7 @@ run_no_move <<- function(
         )
         ttnc_after <- get_post_ttnc(
             st_period   = st_period,
-            ttnc_init   = ttnc,
+            ttnc_before = ttnc,
             s_selected  = selected_sensors,
             paranoid    = paranoid
         )
