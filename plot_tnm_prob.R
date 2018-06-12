@@ -68,7 +68,7 @@ scale_shape_selector <- scale_shape_manual(
     ), values = c(
         "minimal"   = 16,
         "all"       = 18,
-        "nodal"     = 15
+        "nodal"     = 17
     )
 )
 
@@ -131,4 +131,4 @@ ggsave(
     units = "in",
     dpi = 300
 )
-cat("Done", "\n")
+cat("Done!", "\n")

@@ -68,7 +68,7 @@ scale_shape_selector <- scale_shape_manual(
     ), values = c(
         "minimal"   = 16,
         "all"       = 18,
-        "nodal"     = 15
+        "nodal"     = 17
     )
 )
 
@@ -84,9 +84,11 @@ plot_obj_int <- ggplot(data = sr_int_proc, aes(x = num_nodes)) + ggplot_theme +
             ymax = value[, "mean"] + value[, "se"],
             color = selector
         ), size = 0.5, alpha = 0.5,
+        data = subset(sr_int_proc, num_nodes %% 10L == 0L),
         width = (max(sr_int_proc$num_nodes) - min(sr_int_proc$num_nodes)) * 0.02
     ) + geom_point(
-        aes(y = value[, "mean"], color = selector, shape = selector), size = 2
+        aes(y = value[, "mean"], color = selector, shape = selector), size = 2,
+        data = subset(sr_int_proc, num_nodes %% 10L == 0L)
     ) + scale_color_selector + scale_shape_selector +
     guides(color = guide_legend(nrow = 1, title.position = "left"))
 
@@ -101,9 +103,11 @@ plot_obj_cal <- ggplot(data = sr_cal_proc, aes(x = num_nodes)) + ggplot_theme +
             ymax = value[, "mean"] + value[, "se"],
             color = selector
         ), size = 0.5, alpha = 0.5,
+        data = subset(sr_cal_proc, num_nodes %% 10L == 0L),
         width = (max(sr_cal_proc$num_nodes) - min(sr_cal_proc$num_nodes)) * 0.02
     ) + geom_point(
-        aes(y = value[, "mean"], color = selector, shape = selector), size = 2
+        aes(y = value[, "mean"], color = selector, shape = selector), size = 2,
+        data = subset(sr_cal_proc, num_nodes %% 10L == 0L)
     ) + scale_color_selector + scale_shape_selector +
     guides(color = guide_legend(nrow = 1, title.position = "left"))
 
@@ -131,4 +135,4 @@ ggsave(
     units = "in",
     dpi = 300
 )
-cat("Done", "\n")
+cat("Done!", "\n")
