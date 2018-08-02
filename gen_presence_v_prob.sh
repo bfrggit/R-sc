@@ -18,7 +18,7 @@ if [ $? -ne 0 ]; then exit $?; fi
 
 for prob in `seq 5 5 100`; do
     for random_seed in `seq 1 1 5`; do
-        fn=$(realpath -m "${output_dir}/nm_prob_pr_${prob}_${random_seed}.RData")
+        fn=$(realpath -m "${output_dir}/presence_${NUM_NODES}_${prob}_${random_seed}.RData")
         echo ${fn}
 
         prep/prep_presence_unif.R \
