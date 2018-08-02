@@ -7,7 +7,7 @@
 if(!exists("EX_GENERATOR_R")) {
     EX_GENERATOR_R <<- TRUE
 
-generate_sensor_types_random <- function(
+generate_sensor_types_sample <- function(
     num_types,
     period_range,
     cali_t_range
@@ -36,7 +36,7 @@ generate_sensor_types_random <- function(
     res # RETURN
 }
 
-generate_sensor_presence <- function(
+generate_sensor_presence_unif <- function(
     num_nodes,
     num_types,
     prob

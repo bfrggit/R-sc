@@ -1,17 +1,21 @@
 #!/usr/bin/env Rscript
 #
-# prep_types_unif.R
+# prep_types_sample.R
 #
-# Created: 2018-06-07
+# Created: 2018-08-01
 #  Author: Charles Zhu
 
 suppressPackageStartupMessages(require(optparse))
 
 opt_list = list(
     make_option(
-        c("-n", "--num_cases"),
-        action = "store", default = 10, type = "integer",
-        help = "Number of test cases to generate, default = %default"),
+        c("-O", "--output_file"),
+        action = "store", default = NA, type = "character",
+        help = "Output filename"),
+    make_option(
+        c("-s", "--random_seed"),
+        action = "store", default = NA, type = "integer",
+        help = "Random seed, default = %default"),
     make_option(
         c("-K", "--num_types"),
         action = "store", default = NA, type = "integer",
@@ -36,12 +40,17 @@ opt_list = list(
 opt_obj = OptionParser(option_list = opt_list)
 opt = parse_args(opt_obj)
 
+if(is.na(opt$output_file)) {
+    print_help(object = opt_obj)
+    stop("Must specify output filename.")
+}
 if(is.na(opt$num_types)) {
     print_help(object = opt_obj)
     stop("Must specify number of types.")
 }
 
-stopifnot(opt$num_cases > 0L)
+stopifnot(!file.exists(opt$output_file))
+stopifnot(file.create(opt$output_file))
 stopifnot(opt$num_types > 0L)
 stopifnot(opt$period_lower > 0L)
 stopifnot(opt$period_upper >= opt$period_lower)
@@ -56,28 +65,19 @@ CALI_T_RANGE <<- opt$cali_t_lower:opt$cali_t_upper
 lockBinding("PERIOD_RANGE", globalenv())
 lockBinding("CALI_T_RANGE", globalenv())
 
-seed <- 4
-set.seed(seed)
-dir.create(path = "prep_RData", showWarnings = FALSE)
+if(!is.na(opt$random_seed)) {
+    set.seed(opt$random_seed)
+}
 
 source("lib/generator.R")
 
-for(jnd in 1L:opt$num_cases) {
-    st_specs <- generate_sensor_types_random(
-        num_types       = NUM_TYPES,
-        period_range    = PERIOD_RANGE,
-        cali_t_range    = CALI_T_RANGE
-    )
+st_specs <- generate_sensor_types_sample(
+    num_types       = NUM_TYPES,
+    period_range    = PERIOD_RANGE,
+    cali_t_range    = CALI_T_RANGE
+)
 
-    save(
-        NUM_TYPES, PERIOD_RANGE, CALI_T_RANGE, st_specs,
-        file = sprintf(
-            "prep_RData/t_%03x%02x%02x%02x%03x_unif_%02d.RData",
-            NUM_TYPES,
-            opt$period_lower, opt$period_upper,
-            opt$cali_t_lower, opt$cali_t_upper,
-            jnd
-        )
-    )
-}
-
+save(
+    NUM_TYPES, PERIOD_RANGE, CALI_T_RANGE, st_specs,
+    file = opt$output_file
+)
