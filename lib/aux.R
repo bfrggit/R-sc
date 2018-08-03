@@ -1,6 +1,7 @@
 # aux.R
 #
 # Created: 2018-06-07
+# Updated: 2018-08-02
 #  Author: Charles Zhu
 #
 # auxiliary functions for the simulator
@@ -20,13 +21,13 @@ get_cali_time <<- function(
         stopifnot(is.integer(s_selected) && is.matrix(s_selected))
         stopifnot(ncol(s_selected) == NUM_TYPES)
         stopifnot(nrow(s_selected) == NUM_NODES)
-        stopifnot(all(s_selected == 0 | s_selected == 1))
+        stopifnot(all(s_selected == 0L | s_selected == 1L))
     }
 
     sum(
         apply(
             s_selected %*% diag(st_cali_t),
-            MARGIN = 1,
+            MARGIN = 1L,
             max
         )
     ) # RETURN
@@ -49,7 +50,7 @@ get_post_ttnc <<- function(
         stopifnot(is.integer(s_selected) && is.matrix(s_selected))
         stopifnot(ncol(s_selected) == NUM_TYPES)
         stopifnot(nrow(s_selected) == NUM_NODES)
-        stopifnot(all(s_selected == 0 | s_selected == 1))
+        stopifnot(all(s_selected == 0L | s_selected == 1L))
     }
 
     ifelse(

@@ -1,7 +1,7 @@
 # generator.R
 #
 # Created: 2018-06-04
-# Updated: 2018-06-07
+# Updated: 2018-08-02
 #  Author: Charles Zhu
 #
 if(!exists("EX_GENERATOR_R")) {
@@ -62,6 +62,74 @@ generate_sensor_presence_unif <- function(
     colnames(res) = paste("type", as.character(1L:num_types), sep = "_")
     rownames(res) = paste("node", as.character(1L:num_nodes), sep = "_")
     res # RETURN
+}
+
+conv_location_matrix_to_vector <<- function(
+    location_matrix,    # location matrix, each row is a node, col is a spot
+    paranoid = TRUE     # enable/disable paranoid checks
+) {
+    if(paranoid) {
+        stopifnot(is.integer(location_matrix) && is.matrix(location_matrix))
+        stopifnot(ncol(location_matrix) > 1L)
+        stopifnot(nrow(location_matrix) > 0L)
+        stopifnot(all(location_matrix == 0L | location_matrix == 1L))
+        stopifnot(all(location_matrix[, 1L] == 0L)) # spot 1 should be empty
+    }
+
+    num_nodes = nrow(location_matrix)
+    num_spots = ncol(location_matrix)
+    res <- as.integer(location_matrix %*% matrix(1L:num_spots, ncol = 1L))
+    names(res) <- paste("node", as.character(1L:num_nodes), sep = "_")
+    res # RETURN
+}
+
+conv_location_vector_to_matrix <<- function(
+    location_vector,    # location vector, each element refers to a node
+    num_spots,          # need this or we do not how many spots we have total
+    paranoid = TRUE     # enable/disable paranoid checks
+) {
+    if(paranoid) {
+        stopifnot(is.integer(location_vector))
+        stopifnot(length(location_vector) > 0L)
+        stopifnot(all(location_vector > 1L & location_vector <= num_spots))
+    }
+
+    # generate the node location matrix
+    num_nodes = length(location_vector)
+    res <- matrix(0L, nrow = num_nodes, ncol = num_spots)
+    colnames(res) = paste("spot", as.character(1L:num_spots), sep = "_")
+    rownames(res) = paste("node", as.character(1L:num_nodes), sep = "_")
+    for(jnd in 1L:num_nodes) {
+        res[jnd, location_vector[jnd]] = 1L
+    }
+    res # RETURN
+}
+
+generate_sensor_location_vector_unif <- function(
+    num_nodes,
+    num_spots
+) {
+    stopifnot(is.integer(num_nodes))
+    stopifnot(length(num_nodes) == 1L)
+    stopifnot(num_nodes > 0L)
+
+    stopifnot(is.integer(num_spots))
+    stopifnot(length(num_spots) == 1L)
+    stopifnot(num_spots > 1L)
+
+    res <- as.integer(round(runif(n = num_nodes, min = 2L, max = num_spots)))
+    names(res) <- paste("node", as.character(1L:num_nodes), sep = "_")
+    res # RETURN
+}
+
+generate_sensor_location_matrix_unif <- function(
+    num_nodes,
+    num_spots
+) {
+    conv_location_vector_to_matrix(
+        generate_sensor_location_vector_unif(num_nodes, num_spots),
+        num_spots = num_spots
+    ) # RETURN
 }
 
 } # ENDIF
