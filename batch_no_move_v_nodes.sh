@@ -3,21 +3,23 @@
 NUM_TYPES=10
 PROB=50
 
-if [ $# -ne 1 ]; then
-    echo >&2 "Usage: $0 OUTPUT_FILE"
+if [ $# -ne 2 ]; then
+    echo >&2 "Usage: $0 PROJ_ROOT OUTPUT_FILE"
     echo >&2
     echo >&2 "Illegal number of parameters"
     exit 1
 fi
 
-output_file=$(realpath -m "$1")
+proj_root=$(realpath "$1")
+if [ $? -ne 0 ]; then exit $?; fi
+cd ${proj_root}
+
+output_file=$(realpath -m "$2")
 if [ $? -ne 0 ]; then exit $?; fi
 
 if type module >/dev/null 2>&1; then
-    module load R
+    module load R/3.5.0
 fi
-
-cd $(dirname $(realpath "$0"))
 
 rm -f ${output_file}
 touch ${output_file} 
