@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+#
+# simu_no_move.R
+#
+# Created: 2018-08-05
+#  Author: Charles Zhu
 
 rm(list = ls())
 
@@ -9,6 +14,10 @@ opt_list = list(
         c("-O", "--output_file"),
         action = "store", default = NA, type = "character",
         help = "Output filename, default = %default"),
+    make_option(
+        c("-W", "--num_iters"),
+        action = "store", default = 100L, type = "integer",
+        help = "Number of iterations, default = %default"),
     make_option(
         c("--sensor_file"),
         action = "store", default = NA, type = "character",
@@ -26,9 +35,17 @@ opt_list = list(
         action = "store", default = NA, type = "character",
         help = "Selector name"),
     make_option(
-        c("-W", "--num_iters"),
-        action = "store", default = 100L, type = "integer",
-        help = "Number of iterations, default = %default"),
+        c("-x", "--weight_overhead"),
+        action = "store", default = 1e+5, type = "numeric",
+        help = "Weight of iteration overhead, default = %default"),
+    make_option(
+        c("-y", "--weight_cali"),
+        action = "store", default = 1, type = "numeric",
+        help = "Weight of calibration cost, default = %default"),
+    make_option(
+        c("--paranoid"),
+        action = "store_true", default = FALSE, type = "logical",
+        help = "Enable paranoid mode, default = %default"),
     make_option(
         c("--additional_field"),
         action = "store", default = NA, type = "character",
@@ -36,15 +53,7 @@ opt_list = list(
     make_option(
         c("--additional_value"),
         action = "store", default = NA, type = "character",
-        help = "Additional field value(s), default = %default"),
-    make_option(
-        c("-x", "--weight_overhead"),
-        action = "store", default = 1e+5, type = "numeric",
-        help = "Weight of iteration overhead, default = %default"),
-    make_option(
-        c("-y", "--weight_cali"),
-        action = "store", default = 1, type = "numeric",
-        help = "Weight of calibration cost, default = %default")
+        help = "Additional field value(s), default = %default")
 )
 opt_obj = OptionParser(option_list = opt_list)
 opt = parse_args(opt_obj)
@@ -150,7 +159,7 @@ res_case <- run_no_move(
     ttnc_init   = ttnc_init,
     num_iters   = num_iters,
     selector_f  = sel_f,
-    paranoid    = TRUE
+    paranoid    = opt$paranoid
 )
 
 # compute simulation metrics

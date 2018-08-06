@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 
+*.swp
 *.bak
 *.RData
 *.pdf
