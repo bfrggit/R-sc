@@ -1,0 +1,188 @@
+#!/usr/bin/env Rscript
+
+rm(list = ls())
+
+suppressPackageStartupMessages(require(optparse))
+
+opt_list = list(
+    make_option(
+        c("-O", "--output_file"),
+        action = "store", default = NA, type = "character",
+        help = "Output filename, default = %default"),
+    make_option(
+        c("--sensor_file"),
+        action = "store", default = NA, type = "character",
+        help = "Sensor type definition filename"),
+    make_option(
+        c("--location_file"),
+        action = "store", default = NA, type = "character",
+        help = "Location filename"),
+    make_option(
+        c("--presence_file"),
+        action = "store", default = NA, type = "character",
+        help = "Presence filename"),
+    make_option(
+        c("--selector"),
+        action = "store", default = NA, type = "character",
+        help = "Selector name"),
+    make_option(
+        c("-W", "--num_iters"),
+        action = "store", default = 100L, type = "integer",
+        help = "Number of iterations, default = %default"),
+    make_option(
+        c("--additional_field"),
+        action = "store", default = NA, type = "character",
+        help = "Additional field name(s), default = %default"),
+    make_option(
+        c("--additional_value"),
+        action = "store", default = NA, type = "character",
+        help = "Additional field value(s), default = %default"),
+    make_option(
+        c("-x", "--weight_overhead"),
+        action = "store", default = 1e+5, type = "numeric",
+        help = "Weight of iteration overhead, default = %default"),
+    make_option(
+        c("-y", "--weight_cali"),
+        action = "store", default = 1, type = "numeric",
+        help = "Weight of calibration cost, default = %default")
+)
+opt_obj = OptionParser(option_list = opt_list)
+opt = parse_args(opt_obj)
+
+if(is.na(opt$sensor_file)) {
+    print_help(object = opt_obj)
+    stop("Must specify sensor type definition filename.")
+}
+if(is.na(opt$location_file)) {
+    print_help(object = opt_obj)
+    stop("Must specify location filename.")
+}
+if(is.na(opt$presence_file)) {
+    print_help(object = opt_obj)
+    stop("Must specify presence filename.")
+}
+
+SELECTORS <- c("minimal", "all", "nodal", "local")
+lockBinding("SELECTORS", globalenv())
+
+print_selectors <- function() {
+    cat("Supported selector names: ")
+    cat(SELECTORS, sep = ", ")
+    cat("\n\n")
+}
+
+if(is.na(opt$selector)) {
+    print_help(object = opt_obj)
+    print_selectors()
+    stop("Must specify selector name.")
+}
+if(!opt$selector %in% SELECTORS) {
+    print_selectors()
+    stop(sprintf("Unsupported selector name: %s", opt$selector))
+}
+
+if(!is.na(opt$output_file)){
+    stopifnot(!file.exists(opt$output_file))
+    stopifnot(file.create(opt$output_file))
+}
+stopifnot(opt$num_iters > 0L)
+stopifnot(opt$weight_overhead >= 0)
+stopifnot(opt$weight_cali >= 0)
+stopifnot(
+    is.na(opt$additional_field) == is.na(opt$additional_value))
+
+num_iters <- opt$num_iters
+
+source("lib/basic.R")
+source("lib/naive_sel.R")
+source("lib/run_no_move.R")
+
+load(opt$sensor_file)
+load(opt$location_file)
+load(opt$presence_file)
+
+# prepare selectors and choose the one given by options
+sel_f_all <- get_sel_f_all(s_presence = presence)
+sel_f_nodal <- get_sel_f_nodal(s_presence = presence)
+sel_f_local <- get_sel_f_local(
+    n_location = location_matrix,s_presence = presence)
+sel_f = get(paste(c("sel_f", opt$selector), collapse = "_"))
+
+# generate initial TTNC matrix
+# in this test, all sensors are initially new
+ttnc_init <- ifelse(
+    presence,
+    yes = matrix(
+        rep(st_specs$st_period, NUM_NODES),
+        nrow = NUM_NODES,
+        byrow = TRUE
+    ),
+    no = Inf
+)
+
+cat(
+    "selector",
+    "num_iters",
+    "interval_mean",
+    "cali_t_per_iter",
+    "weight_overhead",
+    "weight_cali",
+    "overhead_average",
+    "cali_t_average",
+    "weighted_overhead",
+    "weighted_cali",
+    "weighted_sum",
+    sep = ", "
+)
+if(!is.na(opt$additional_field)) {
+    cat("", opt$additional_field, sep = ", ")
+}
+cat("\n")
+
+#-----------------------------------------------------------
+# actual function call to run simulator
+#
+res_case <- run_no_move(
+    st_period   = st_specs$st_period,
+    st_cali_t   = st_specs$st_cali_t,
+    n_location  = location_matrix,
+    s_presence  = presence,
+    ttnc_init   = ttnc_init,
+    num_iters   = num_iters,
+    selector_f  = sel_f,
+    paranoid    = TRUE
+)
+
+# compute simulation metrics
+interval_mean <- mean(res_case$intervals)
+cali_t_per_iter <- mean(res_case$cali_cost)
+overhead_average <- num_iters / sum(res_case$intervals)
+cali_t_average <- sum(res_case$cali_cost) / sum(res_case$intervals)
+weighted_overhead <- opt$weight_overhead * overhead_average
+weighted_cali <- opt$weight_cali * cali_t_average
+weighted_sum <- weighted_overhead + weighted_cali
+
+# print results
+cat(
+    opt$selector,
+    num_iters,
+    interval_mean,
+    cali_t_per_iter,
+    opt$weight_overhead,
+    opt$weight_cali,
+    overhead_average,
+    cali_t_average,
+    weighted_overhead,
+    weighted_cali,
+    weighted_sum,
+    sep = ", "
+)
+if(!is.na(opt$additional_value)) {
+    cat("", opt$additional_value, sep = ", ")
+}
+cat("\n")
+
+# save to file
+if(!is.na(opt$output_file)){
+    save.image(file = opt$output_file)
+}

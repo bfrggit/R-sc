@@ -1,7 +1,7 @@
 # run_no_move.R
 #
 # Created: 2018-06-04
-# Updated: 2018-06-07
+# Updated: 2018-08-05
 #  Author: Charles Zhu
 
 if(!exists("EX_RUN_NO_MOVE_R")) {
@@ -13,6 +13,7 @@ source("lib/aux.R")
 run_no_move <<- function(
     st_period,          # sensor type calibration period
     st_cali_t,          # sensor type calibration time/cost
+    n_location,         # node location matrix
     s_presence,         # sensor presence matrix
     ttnc_init,          # initial TTNC matrix
     num_iters,          # number of iterations as stop condition for simulation
@@ -30,6 +31,11 @@ run_no_move <<- function(
 
         stopifnot(is.integer(st_cali_t))
         stopifnot(length(st_cali_t) == NUM_TYPES)
+
+        stopifnot(is.integer(n_location) && is.matrix(n_location))
+        stopifnot(ncol(n_location) == NUM_SPOTS_POPULATED)
+        stopifnot(nrow(n_location) == NUM_NODES)
+        stopifnot(all(n_location == 0L | n_location == 1L))
 
         stopifnot(is.integer(s_presence) && is.matrix(s_presence))
         stopifnot(ncol(s_presence) == NUM_TYPES)
@@ -55,8 +61,6 @@ run_no_move <<- function(
     for(it in 1L:num_iters) {
         # call the sensor selection solver
         selected_sensors <- selector_f(
-            st_period   = st_period,
-            st_cali_t   = st_cali_t,
             ttnc_before = ttnc
         )
 
@@ -73,6 +77,7 @@ run_no_move <<- function(
         cali_cost[it] <- get_cali_time(
             st_cali_t   = st_cali_t,
             s_selected  = selected_sensors,
+            n_location  = n_location,
             paranoid    = paranoid
         )
         ttnc_after <- get_post_ttnc(
