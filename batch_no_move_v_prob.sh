@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NUM_TYPES=10
-PROB=50
+NUM_NODES=100
 
 if [ $# -ne 2 ]; then
     echo >&2 "Usage: $0 PROJ_ROOT OUTPUT_FILE"
@@ -26,18 +26,18 @@ touch ${output_file}
 if [ $? -ne 0 ]; then exit $?; fi
 
 tail_lines=2
-for num_nodes in `seq 5 5 200`; do
+for prob in `seq 5 5 100`; do
 
 for case_types in `seq 1 1 2`; do
 sensor_fn=$(realpath "prep_types_RData/types_${NUM_TYPES}_${case_types}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for case_location in `seq 1 1 2`; do
-location_fn=$(realpath "prep_location_v_nodes_RData/location_${num_nodes}_${case_location}.RData")
+location_fn=$(realpath "prep_location_v_nodes_RData/location_${NUM_NODES}_${case_location}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for case_presence in `seq 1 1 5`; do
-presence_fn=$(realpath "prep_presence_v_nodes_RData/presence_${num_nodes}_${PROB}_${case_presence}.RData")
+presence_fn=$(realpath "prep_presence_v_prob_RData/presence_${NUM_NODES}_${prob}_${case_presence}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for selector in "minimal" "all" "nodal" "local"; do
@@ -51,7 +51,7 @@ simu/simu_no_move.R \
 --presence_file=${presence_fn} \
 --selector=${selector} \
 --additional_field="num_nodes, prob, case_types_id, case_location_id, case_presence_id" \
---additional_value="${num_nodes}, ${PROB}, ${case_types}, ${case_location}, ${case_presence}" | tail -n ${tail_lines} | tee -a "${output_file}"
+--additional_value="${NUM_NODES}, ${prob}, ${case_types}, ${case_location}, ${case_presence}" | tail -n ${tail_lines} | tee -a "${output_file}"
 if [ $? -ne 0 ]; then exit $?; fi
 tail_lines=1
 
