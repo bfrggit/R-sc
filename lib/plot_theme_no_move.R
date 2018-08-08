@@ -8,6 +8,8 @@
 if(!exists("EX_PLOT_THEME_R")) {
     EX_PLOT_THEME_R <<- TRUE
 
+library(ggplot2)
+
 ggplot_theme <<- theme_light() +
     theme(axis.text = element_text(size = 16)) +
     theme(axis.title = element_text(size = 18)) +
