@@ -6,7 +6,6 @@
 *.swp
 *.bak
 *.RData
-*.pdf
 *.png
 
 /tmp
