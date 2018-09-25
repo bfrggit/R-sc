@@ -117,7 +117,7 @@ generate_sensor_location_vector_unif <- function(
     stopifnot(length(num_spots) == 1L)
     stopifnot(num_spots > 1L)
 
-    res <- as.integer(round(runif(n = num_nodes, min = 2L, max = num_spots)))
+	res <- as.integer(sample(2L:num_spots, size = num_nodes, replace = TRUE))
     names(res) <- paste("node", as.character(1L:num_nodes), sep = "_")
     res # RETURN
 }
