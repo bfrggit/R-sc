@@ -3,6 +3,7 @@
 # prep_graph_random_loop_unif.R
 #
 # Created: 2018-09-24
+# Updated: 2018-09-26
 #  Author: Charles Zhu
 
 suppressPackageStartupMessages(require(optparse))
@@ -84,9 +85,21 @@ map_graph <- graph_from_adjacency_matrix(
     weighted    = TRUE,
     diag        = FALSE
 )
+map_graph_distances <- distances(
+    map_graph,
+    mode        = "out",
+    algorithm   = "dijkstra"
+)
+map_alternative_graph <- graph_from_adjacency_matrix(
+    adjmatrix   = map_graph_distances,
+    mode        = "directed",
+    weighted    = TRUE,
+    diag        = FALSE
+)
 
 save(
-    NUM_SPOTS, NUM_EDGES,
+    NUM_SPOTS, NUM_EDGES, WEIGHT_GEN_F,
     map_graph_adj_matrix, map_graph,
+    map_graph_distances, map_alternative_graph,
     file = opt$output_file
 )
