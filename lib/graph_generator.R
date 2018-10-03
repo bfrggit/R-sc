@@ -1,6 +1,7 @@
 # graph_generator.R
 #
 # Created: 2018-09-24
+# Updated: 2018-10-03
 #  Author: Charles Zhu
 #
 if(!exists("EX_GRAPH_GENERATOR_R")) {
@@ -52,7 +53,7 @@ generate_connected_digraph_adj_matrix_random_loop <- function(
                 ),
                 size = num_edges - num_spots
             )
-        ] <- rand_gen_f()
+        ] <- rand_gen_f(size = num_edges - num_spots)
     }
 
     # paranoid check

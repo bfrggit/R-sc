@@ -3,7 +3,7 @@
 # prep_graph_random_loop_unif.R
 #
 # Created: 2018-09-24
-# Updated: 2018-09-26
+# Updated: 2018-10-03
 #  Author: Charles Zhu
 
 suppressPackageStartupMessages(require(optparse))
@@ -63,11 +63,11 @@ if(!is.na(opt$random_seed)) {
 
 suppressPackageStartupMessages(source("lib/graph_generator.R"))
 
-WEIGHT_GEN_F <<- function() {
+WEIGHT_GEN_F <<- function(size = 1L) {
     as.integer(
         sample(
             opt$weight_lower:opt$weight_upper,
-            size = 1L,
+            size = size,
             replace = TRUE
         )
     ) # RETURN
@@ -90,6 +90,7 @@ map_graph_distances <- distances(
     mode        = "out",
     algorithm   = "dijkstra"
 )
+storage.mode(map_graph_distances) <- "integer"
 map_alternative_graph <- graph_from_adjacency_matrix(
     adjmatrix   = map_graph_distances,
     mode        = "directed",
