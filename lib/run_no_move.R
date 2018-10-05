@@ -57,7 +57,7 @@ run_no_move <<- function(
     intervals <- rep(NaN, num_iters)
     names(cali_cost) <- names(intervals) <- z_nd_str("iter", num_iters)
 
-    ttnc <- ttnc_init
+    ttnc <- ttnc_init - min(ttnc_init)
     for(it in 1L:num_iters) {
         # call the sensor selection solver
         selected_sensors <- selector_f(
