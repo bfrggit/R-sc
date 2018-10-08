@@ -1,6 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
+# Updated: 2018-10-08
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -67,8 +68,12 @@ run <<- function(
     cali_cost <- rep(NaN, num_iters)
     move_cost <- rep(NaN, num_iters)
     intervals <- rep(NaN, num_iters)
-    names(cali_cost) <- names(move_cost) <- names(intervals) <-
-            z_nd_str("iter", num_iters)
+    num_paths <- rep(NaN, num_iters)
+    names(cali_cost) <-
+        names(move_cost) <-
+        names(intervals) <-
+        names(num_paths) <-
+        z_nd_str("iter", num_iters)
 
     ttnc <- ttnc_init - min(ttnc_init)
     for(it in 1L:num_iters) {
@@ -94,7 +99,7 @@ run <<- function(
             paranoid    = paranoid
         )
 
-        # movement cost
+        # preprocess for calculating movement cost
         selected_spots <- get_selected_spots_from_selected_sensors(
             s_selected  = selected_sensors,
             n_location  = n_location,
@@ -104,11 +109,30 @@ run <<- function(
             l_selected  = selected_spots,
             paranoid    = paranoid
         )
-        move_cost[it] <- get_move_dist(
+
+        if(paranoid) {
+            stopifnot(
+                is_valid_multi_paths_array(
+                    paths_array = paths_array,
+                    must_start_from_spot = 1L,
+                    paranoid = paranoid
+                )
+            )
+        }
+
+        # movement cost
+        move_cost_per_worker <- get_move_dist_per_worker(
             distance_matrix = distance_matrix,
             paths_array     = paths_array,
             paranoid        = paranoid
         )
+        # move_cost[it] <- get_move_dist(
+        #     distance_matrix = distance_matrix,
+        #     paths_array     = paths_array,
+        #     paranoid        = paranoid
+        # )
+        move_cost[it] <- sum(move_cost_per_worker)
+        num_paths[it] <- sum(move_cost_per_worker > 0)
 
         # state transition
         ttnc_after <- get_post_ttnc(
@@ -125,6 +149,7 @@ run <<- function(
     res$cali_cost <- cali_cost
     res$move_cost <- move_cost
     res$intervals <- intervals
+    res$num_paths <- num_paths
     res # RETURN
 }
 

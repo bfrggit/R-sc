@@ -1,6 +1,7 @@
 # graph_aux.R
 #
 # Created: 2018-10-04
+# Updated: 2018-10-08
 #  Author: Charles Zhu
 #
 if(!exists("EX_GRAPH_AUX_R")) {
@@ -37,6 +38,7 @@ is_zero_path_matrix <<- function(
 is_valid_single_path_matrix <<- function(
     path_matrix,                    # each "1" is a taken edge
     must_start_from_spot = NULL,    # int as node index or NULL if not required
+    allow_zero = TRUE,              # if a zero matrix is considered valid
     paranoid = TRUE
 ) {
     stopifnot(is.matrix(path_matrix))
@@ -54,7 +56,9 @@ is_valid_single_path_matrix <<- function(
         }
     }
     stopifnot(all(path_matrix == 0L | path_matrix == 1L))
-    if(is_zero_path_matrix(path_matrix, paranoid = FALSE)) { return(TRUE) }
+    if(is_zero_path_matrix(path_matrix, paranoid = FALSE)) {
+        return(allow_zero)
+    }
 
     # it is not allowed to travel from a spot to itself
     for(spot in 1L:NUM_SPOTS) {
@@ -94,6 +98,7 @@ is_valid_single_path_matrix <<- function(
 is_valid_multi_paths_array <<- function(
     paths_array,                    # three-dimensional, L by L by num_workers
     must_start_from_spot = 1L,      # int as node index
+    allow_zero = TRUE,              # if a zero matrix is considered valid
     paranoid = TRUE
 ) {
     if(paranoid) {
@@ -115,6 +120,7 @@ is_valid_multi_paths_array <<- function(
         if(!is_valid_single_path_matrix(
             path_matrix             = paths_array[, , worker],
             must_start_from_spot    = must_start_from_spot,
+            allow_zero              = allow_zero,
             paranoid                = FALSE)
         ) { return(FALSE) }
     }
@@ -122,7 +128,7 @@ is_valid_multi_paths_array <<- function(
     num_out_edges <- apply(paths_array, MARGIN = 1L, FUN = sum)
     num_in_edges <- apply(paths_array, MARGIN = 2L, FUN = sum)
     if(any(num_out_edges != num_in_edges)) { return(FALSE) }
-    if(sum(as.integer(num_out_edges > 1L)) > 1L) { return(FALSE) }
+    if(sum(num_out_edges > 1L) > 1) { return(FALSE) }
     if(num_out_edges[must_start_from_spot] != num_workers) { return(FALSE) }
     TRUE # RETURN
 }

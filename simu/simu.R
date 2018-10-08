@@ -3,6 +3,7 @@
 # simu.R
 #
 # Created: 2018-10-05
+# Updated: 2018-10-08
 #  Author: Charles Zhu
 #
 # derived from simu_no_move.R
@@ -56,6 +57,10 @@ opt_list = list(
         c("-z", "--weight_move"),
         action = "store", default = 5, type = "numeric",
         help = "Weight of movement cost, default = %default"),
+    make_option(
+        c("-w", "--weight_worker"),
+        action = "store", default = 0, type = "numeric",
+        help = "Weight of worker overhead, default = %default"),
     make_option(
         c("--paranoid"),
         action = "store_true", default = FALSE, type = "logical",
@@ -134,6 +139,8 @@ if(!is.na(opt$output_file)){
 stopifnot(opt$num_iters > 0L)
 stopifnot(opt$weight_overhead >= 0)
 stopifnot(opt$weight_cali >= 0)
+stopifnot(opt$weight_move >= 0)
+stopifnot(opt$weight_worker >= 0)
 stopifnot(
     is.na(opt$additional_field) == is.na(opt$additional_value))
 
@@ -180,15 +187,19 @@ cat(
     "interval_mean",
     "cali_t_per_iter",
     "move_d_per_iter",
+    "n_path_per_iter",
     "weight_overhead",
     "weight_cali",
     "weight_move",
+    "weight_worker",
     "overhead_average",
     "cali_t_average",
     "move_d_average",
+    "n_path_average",
     "weighted_overhead",
     "weighted_cali",
     "weighted_move",
+    "weighted_worker",
     "weighted_sum",
     sep = ", "
 )
@@ -217,13 +228,20 @@ res_case <- run(
 interval_mean <- mean(res_case$intervals)
 cali_t_per_iter <- mean(res_case$cali_cost)
 move_d_per_iter <- mean(res_case$move_cost)
+n_path_per_iter <- mean(res_case$num_paths)
 overhead_average <- num_iters / sum(res_case$intervals)
 cali_t_average <- sum(res_case$cali_cost) / sum(res_case$intervals)
 move_d_average <- sum(res_case$move_cost) / sum(res_case$intervals)
+n_path_average <- sum(res_case$num_paths) / sum(res_case$intervals)
 weighted_overhead <- opt$weight_overhead * overhead_average
 weighted_cali <- opt$weight_cali * cali_t_average
 weighted_move <- opt$weight_move * move_d_average
-weighted_sum <- weighted_overhead + weighted_cali + weighted_move
+weighted_worker <- opt$weight_worker * n_path_average
+weighted_sum <-
+    weighted_overhead +
+    weighted_cali +
+    weighted_move +
+    weighted_worker
 
 # print results
 cat(
@@ -232,15 +250,19 @@ cat(
     interval_mean,
     cali_t_per_iter,
     move_d_per_iter,
+    n_path_per_iter,
     opt$weight_overhead,
     opt$weight_cali,
     opt$weight_move,
+    opt$weight_worker,
     overhead_average,
     cali_t_average,
     move_d_average,
+    n_path_average,
     weighted_overhead,
     weighted_cali,
     weighted_move,
+    weighted_worker,
     weighted_sum,
     sep = ", "
 )
