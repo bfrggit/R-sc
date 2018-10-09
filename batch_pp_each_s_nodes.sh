@@ -1,13 +1,13 @@
 #!/bin/bash
 
 NUM_TYPES=10
-NUM_NODES=100
+PROB=50
 NUM_EDGES=300
 CASE_GRAPH=4
 RE_NUMBER='^[0-9]+$'
 
 print_usage() {
-    echo >&2 "Usage: $0 PROB PROJ_ROOT OUTPUT_FILE"
+    echo >&2 "Usage: $0 NUM_NODES PROJ_ROOT OUTPUT_FILE"
 }
 
 if [ $# -ne 3 ]; then
@@ -17,11 +17,11 @@ if [ $# -ne 3 ]; then
     exit 1
 fi
 
-prob="$1"
-if [[ ! ${prob} =~ ${RE_NUMBER} ]]; then
+num_nodes="$1"
+if [[ ! ${num_nodes} =~ ${RE_NUMBER} ]]; then
     print_usage
     echo >&2
-    echo >&2 "PROB must be an integer"
+    echo >&2 "NUM_NODES must be an integer"
     exit 1
 fi
 
@@ -48,11 +48,11 @@ sensor_fn=$(realpath "prep_types_RData/types_${NUM_TYPES}_${case_types}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for case_location in `seq 1 1 2`; do
-location_fn=$(realpath "prep_location_v_nodes_RData/location_${NUM_NODES}_${case_location}.RData")
+location_fn=$(realpath "prep_location_v_nodes_RData/location_${num_nodes}_${case_location}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for case_presence in `seq 1 1 5`; do
-presence_fn=$(realpath "prep_presence_v_prob_RData/presence_${NUM_NODES}_${prob}_${case_presence}.RData")
+presence_fn=$(realpath "prep_presence_v_nodes_RData/presence_${num_nodes}_${PROB}_${case_presence}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
 for selector in "minimal" "all" "nodal" "local"; do
@@ -70,7 +70,7 @@ simu/simu.R \
 --selector=${selector} \
 --path_planner=each \
 --additional_field="num_nodes, prob, num_edges, case_types_id, case_location_id, case_presence_id, case_graph_id" \
---additional_value="${NUM_NODES}, ${prob}, ${NUM_EDGES}, ${case_types}, ${case_location}, ${case_presence}, ${CASE_GRAPH}" | tail -n ${tail_lines} | tee -a "${output_file}"
+--additional_value="${num_nodes}, ${PROB}, ${NUM_EDGES}, ${case_types}, ${case_location}, ${case_presence}, ${CASE_GRAPH}" | tail -n ${tail_lines} | tee -a "${output_file}"
 if [ $? -ne 0 ]; then exit $?; fi
 tail_lines=1
 
