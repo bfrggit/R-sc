@@ -36,7 +36,7 @@ opt_list = list(
         help = "Selector name"),
     make_option(
         c("-x", "--weight_overhead"),
-        action = "store", default = 1e+5, type = "numeric",
+        action = "store", default = 1e+4, type = "numeric",
         help = "Weight of iteration overhead, default = %default"),
     make_option(
         c("-y", "--weight_cali"),

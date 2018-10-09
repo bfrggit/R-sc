@@ -44,7 +44,7 @@ for selector in "minimal" "all" "nodal" "local"; do
 simu/simu_no_move.R \
 --paranoid \
 -W 100 \
--x 1e+5 \
+-x 1e+4 \
 -y 1 \
 --sensor_file=${sensor_fn} \
 --location_file=${location_fn} \

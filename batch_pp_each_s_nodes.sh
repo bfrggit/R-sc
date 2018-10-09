@@ -59,7 +59,7 @@ for selector in "minimal" "all" "nodal" "local"; do
 simu/simu.R \
 --paranoid \
 -W 100 \
--x 2e+4 \
+-x 1e+4 \
 -y 1 \
 -z 5 \
 -w 0 \
