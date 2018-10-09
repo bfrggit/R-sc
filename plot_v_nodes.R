@@ -32,7 +32,7 @@ library(ggplot2)
 library(reshape2)
 library(Cairo)
 
-var_index <- "probability_presence"
+var_index <- "number_nodes"
 cat("Processing...", "\n")
 df_ls <- aggregate_df_to_list(df_csv, var = var_index)
 
@@ -54,10 +54,12 @@ for(val_index in VAL_NAMES) {
                 ymax = val[, "mean"] + val[, "se"],
                 color = selector
             ), size = 0.5, alpha = 0.5,
+            data = subset(df, var %% 10L == 0L),
             width = (max(df$var) - min(df$var)) * 0.02
         ) + geom_point(
             aes(y = val[, "mean"], color = selector, shape = selector),
-            size = 2
+            size = 2,
+            data = subset(df, var %% 10L == 0L)
         ) + scale_color_selector + scale_shape_selector +
         guides(color = guide_legend(nrow = 1, title.position = "left"))
 }
