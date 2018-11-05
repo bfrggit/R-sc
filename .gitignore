@@ -6,8 +6,8 @@
 *.swp
 *.bak
 *.RData
+*.csv
 *.png
 
-/data_pp_each_csv
 /tmp
 !README.md
