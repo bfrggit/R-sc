@@ -1,7 +1,7 @@
-# pp_ompr.R
+# pp_ompr_glpk.R
 #
 # Created: 2018-10-29
-# Updated: 2018-11-01
+# Updated: 2018-11-05
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -25,7 +25,7 @@ library(ROI.plugin.glpk)
 
 source("lib/basic.R")
 
-get_multi_paths_ompr <<- function(
+get_multi_paths_ompr_glpk <<- function(
     l_selected,             # selected spots, len L vector
     distance_matrix,        # distance matrix
     num_workers,            # number of workers (a.k.a. salesmen)
@@ -221,8 +221,47 @@ get_multi_paths_ompr <<- function(
         )
     }
 
-    # model
-    result <- solve_model(model, with_ROI(solver = "glpk"))
+    # result object is made globally available for testing purpose
+    ompr_result <<- solve_model(model, with_ROI(solver = "glpk"))
+    solution <- get_solution(
+        ompr_result, x[i, j, k]
+    ) %>% filter(value > 0 & i != j)
+    if(nrow(solution) == 0L) { return(NULL) }
+    unique_workers <- unique(solution$k)
+    actual_num_workers <- length(unique_workers)
+
+    # construct array of paths
+    paths_array <- array(
+        data = rep(
+            0L,
+            NUM_SPOTS * NUM_SPOTS * actual_num_workers
+        ), dim = c(NUM_SPOTS, NUM_SPOTS, actual_num_workers),
+        dimnames = list(
+            z_nd_str("spot", NUM_SPOTS),
+            z_nd_str("spot", NUM_SPOTS),
+            z_nd_str("worker", actual_num_workers)
+        )
+    )
+    worker_id_map = rep(0L, num_workers)
+    worker_id_map[unique_workers] = 1L:actual_num_workers
+    if(paranoid) {
+        stopifnot(
+            all(worker_id_map >= 0L) && all(worker_id_map <= actual_num_workers)
+        )
+
+        # guarantee each worker id in array is mapped from exactly one worker
+        for(worker_id in 1L:actual_num_workers) {
+            stopifnot(sum(worker_id_map == worker_id) == 1L)
+        }
+    }
+
+    # fill in the array
+    for(jnd in 1L:nrow(solution)) {
+        worker_id <- worker_id_map[solution$k[jnd]]
+        paths_array[solution$i[jnd], solution$j[jnd], worker_id] <-
+            as.integer(solution$value[jnd] > 0)
+    }
+    paths_array # RETURN
 }
 
 } # ENDIF
