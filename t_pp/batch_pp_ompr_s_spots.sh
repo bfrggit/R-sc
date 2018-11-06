@@ -3,10 +3,10 @@
 RE_NUMBER='^[0-9]+$'
 
 print_usage() {
-    echo >&2 "Usage: $0 NUM_SPOTS PROJ_ROOT OUTPUT_FILE"
+    echo >&2 "Usage: $0 NUM_SPOTS PATH_PLANNER PROJ_ROOT OUTPUT_FILE"
 }
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 4 ]; then
     print_usage
     echo >&2
     echo >&2 "Illegal number of parameters"
@@ -21,11 +21,13 @@ if [[ ! ${num_spots} =~ ${RE_NUMBER} ]]; then
     exit 1
 fi
 
-proj_root=$(realpath "$2")
+path_planner="$2"
+
+proj_root=$(realpath "$3")
 if [ $? -ne 0 ]; then exit $?; fi
 cd ${proj_root}
 
-output_file=$(realpath -m "$3")
+output_file=$(realpath -m "$4")
 if [ $? -ne 0 ]; then exit $?; fi
 
 if type module >/dev/null 2>&1; then
@@ -44,6 +46,8 @@ if [ $? -ne 0 ]; then exit $?; fi
 t_pp/t_pp_ompr.R \
 --paranoid \
 --distance_file=${distance_fn} \
+--path_planner=${path_planner} \
+--max_cost_worker=1200 \
 --additional_field="case_graph_id" \
 --additional_value="${case_graph}" | tail -n ${tail_lines} | tee -a "${output_file}"
 if [ $? -ne 0 ]; then exit $?; fi
