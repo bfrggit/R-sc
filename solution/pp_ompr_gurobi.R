@@ -1,11 +1,10 @@
-# pp_ompr_glpk.R
+# pp_ompr_gurobi.R
 #
-# Created: 2018-10-29
-# Updated: 2018-11-05
+# Created: 2018-11-12
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
-# MILP solution using OMPR and GLPK
+# MILP solution using OMPR and Gurobi
 #
 # Examples:
 #   Dirk Schumacher, The Multiple Traveling Salesmen Problem:
@@ -13,19 +12,19 @@
 #
 # References:
 #   OMPR: https://dirkschumacher.github.io/ompr/index.html
-#   GLPK: https://www.gnu.org/software/glpk/
-#   RGLPK: https://cran.r-project.org/web/packages/Rglpk/index.html
+#   Gurobi: http://www.gurobi.com/
+#   ROI.plugin.gurobi: https://github.com/Fl0Sch/ROI.plugin.gurobi/
 
-if(!exists("EX_PP_OMPR_GLPK_R")) {
-    EX_PP_OMPR_GLPK_R <<- TRUE
+if(!exists("EX_PP_OMPR_GUROBI_R")) {
+    EX_PP_OMPR_GUROBI_R <<- TRUE
 
 library(ompr)
 library(ompr.roi)
-library(ROI.plugin.glpk)
+library(ROI.plugin.gurobi)
 
 source("lib/basic.R")
 
-get_multi_paths_ompr_glpk <<- function(
+get_multi_paths_ompr_gurobi <<- function(
     l_selected,             # selected spots, len L vector
     distance_matrix,        # distance matrix
     num_workers,            # number of workers (a.k.a. salesmen)
@@ -222,7 +221,7 @@ get_multi_paths_ompr_glpk <<- function(
     }
 
     # result object is made globally available for testing purpose
-    ompr_result <<- solve_model(model, with_ROI(solver = "glpk"))
+    ompr_result <<- solve_model(model, with_ROI(solver = "gurobi"))
     solution <- get_solution(
         ompr_result, x[i, j, k]
     ) %>% filter(value > 0 & i != j)

@@ -3,7 +3,7 @@
 # t_pp_ompr.R
 #
 # Created: 2018-10-30
-# Updated: 2018-11-05
+# Updated: 2018-11-12
 #  Author: Charles Zhu
 #
 # test script for solution/pp_ompr.R
@@ -58,7 +58,7 @@ if(is.na(opt$distance_file)) {
 
 stopifnot(opt$max_cost_worker >= 0)
 
-PATH_PLANNERS <- c("ompr_glpk")
+PATH_PLANNERS <- c("ompr_glpk", "ompr_gurobi")
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {
@@ -86,6 +86,8 @@ source(sprintf("solution/pp_%s.R", opt$path_planner))
 
 if(opt$path_planner == "ompr_glpk") {
     pp_f <- get_multi_paths_ompr_glpk
+} else if(opt$path_planner == "ompr_gurobi") {
+    pp_f <- get_multi_paths_ompr_gurobi
 }
 stopifnot(exists("pp_f"))
 
@@ -188,7 +190,7 @@ if(is.null(paths_array)) {
 
 # use my implementation to compute cost per worker and total cost
 # should be consistent with the objective value if no cali cost is introduced
-cost_woker <- NULL
+cost_worker <- NULL
 total_cost <- 0
 if(!is.null(paths_array)) {
     cost_worker <- get_move_dist_per_worker(
