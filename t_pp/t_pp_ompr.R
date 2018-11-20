@@ -3,7 +3,7 @@
 # t_pp_ompr.R
 #
 # Created: 2018-10-30
-# Updated: 2018-11-12
+# Updated: 2018-11-20
 #  Author: Charles Zhu
 #
 # test script for solution/pp_ompr.R
@@ -138,8 +138,13 @@ solver_time = system.time(
         paranoid        = opt$paranoid
     )
 )
-res_status <- solver_status(ompr_result)
-res_value <- objective_value(ompr_result)
+
+res_status <- "error"
+res_value <- 0
+if(!is.null(ompr_result)) {
+    res_status <- solver_status(ompr_result)
+    res_value <- objective_value(ompr_result)
+}
 
 if(fo_flag) {
     cat(sprintf("Time elapsed: %.3f\n", solver_time[3]))

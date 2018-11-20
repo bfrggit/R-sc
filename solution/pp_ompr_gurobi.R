@@ -221,7 +221,18 @@ get_multi_paths_ompr_gurobi <<- function(
     }
 
     # result object is made globally available for testing purpose
-    ompr_result <<- solve_model(model, with_ROI(solver = "gurobi"))
+    ompr_result <<- tryCatch(
+        solve_model(model, with_ROI(solver = "gurobi")),
+        error = function(e) {
+            NULL # RETURN
+        }
+    )
+
+    # early termination in error
+    if(is.null(ompr_result)) {
+        return(NULL)
+    }
+
     solution <- get_solution(
         ompr_result, x[i, j, k]
     ) %>% filter(value > 0 & i != j)
