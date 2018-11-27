@@ -21,29 +21,33 @@ source("lib/basic.R")
 
 suppressPackageStartupMessages(library(GA))
 
-is_valid_chromosome <- function(chromosome, start_from_spot) {
-    stopifnot(is.integer(start_from_spot))
-    stopifnot(length(start_from_spot) == 1L)
-    stopifnot(start_from_spot > 0)
+stop_if_not_valid_chromosome <- function(
+    chromosome,
+    start_from_spot = NULL
+) {
+    if(!is.null(start_from_spot)) {
+        stopifnot(is.integer(start_from_spot))
+        stopifnot(length(start_from_spot) == 1L)
+        stopifnot(start_from_spot > 0)
+    }
 
-    if(!is.vector(chromosome)) return(FALSE)
-    if(!is.numeric(chromosome)) return(FALSE)
-    if(any(as.integer(chromosome) != chromosome)) return(FALSE)
-    if(length(chromosome) %% 2L != 0) return(FALSE)
+    stopifnot(is.vector(chromosome))
+    stopifnot(is.numeric(chromosome))
+    stopifnot(all(as.integer(chromosome) == chromosome))
+    stopifnot(length(chromosome) > 1)
+    stopifnot(length(chromosome) %% 2L == 0)
 
     num_selected <- length(chromosome) %/% 2L
     order_spots <- chromosome[1L:num_selected]
-    if(any(order_spots < 1)) return(FALSE)
-    if(any(order_spots > NUM_SPOTS)) return(FALSE)
-    if(any(order_spots == start_from_spot)) return(FALSE)
-    if(length(unique(order_spots)) != length(order_spots)) return(FALSE)
+    stopifnot(all(order_spots >= 1))
+    stopifnot(all(order_spots <= NUM_SPOTS))
+    stopifnot(length(unique(order_spots)) == length(order_spots))
+    stopifnot(all(order_spots != start_from_spot))
 
     num_tour <- chromosome[(num_selected + 1L):length(chromosome)]
-    if(length(num_tour) != num_selected) return(FALSE)
-    if(any(num_tour < 0)) return(FALSE)
-    if(sum(num_tour) != num_selected) return(FALSE)
-
-    TRUE # RETURN
+    stopifnot(length(num_tour) == num_selected)
+    stopifnot(all(num_tour >= 0))
+    stopifnot(sum(num_tour) == num_selected)
 }
 
 # get_tour_len <- function(
@@ -78,10 +82,11 @@ get_tour_len <- function(
     paranoid = TRUE
 ) {
     if(paranoid) {
-        stopifnot(is_valid_chromosome(chromosome, start_from_spot))
+        stop_if_not_valid_chromosome(chromosome, start_from_spot)
         num_selected <- length(chromosome) %/% 2L
 
-        stopifnot(tour_begin <= num_selected)
+        stopifnot(tour_begin <= tour_end)
+        # stopifnot(tour_begin <= num_selected)
         stopifnot(tour_end <= num_selected)
     }
 
@@ -115,8 +120,14 @@ get_tour_len <- function(
 # compute begin/end indexes of each tour in the chromosome
 get_tour_begin_end <- function(
     chromosome,
-    num_selected
+    num_selected,
+    paranoid = TRUE
 ) {
+    if(paranoid) {
+        stop_if_not_valid_chromosome(chromosome)
+        stopifnot(num_selected == length(chromosome) %/% 2L)
+    }
+
     tour_end <- as.integer(
         cumsum(
             chromosome[
@@ -148,8 +159,17 @@ get_multi_tour_len <- function(
     tour_begin,     # vector
     tour_end,       # vector
     distance_matrix,
-    start_from_spot
+    start_from_spot,
+    paranoid = TRUE
 ) {
+    if(paranoid) {
+        stop_if_not_valid_chromosome(chromosome, start_from_spot)
+        stopifnot(num_selected == length(chromosome) %/% 2L)
+
+        stopifnot(length(tour_begin) == num_selected)
+        stopifnot(length(tour_end) == num_selected)
+    }
+
     tour_sum <- rep(0, num_selected)
     for(tnd in 1L:num_selected) {
         if(chromosome[num_selected + tnd] > 0) {
@@ -158,7 +178,8 @@ get_multi_tour_len <- function(
                 tour_begin      = tour_begin[tnd],
                 tour_end        = tour_end[tnd],
                 distance_matrix = distance_matrix,
-                start_from_spot = start_from_spot
+                start_from_spot = start_from_spot,
+                paranoid        = paranoid
             )
         }
     }
@@ -173,8 +194,16 @@ get_multi_cali_sum <- function(
     num_selected,
     tour_begin,
     tour_end,
-    spot_cali_cost
+    spot_cali_cost,
+    paranoid = TRUE
 ) {
+    if(paranoid) {
+        stop_if_not_valid_chromosome(chromosome)
+        stopifnot(num_selected == length(chromosome) %/% 2L)
+
+        stopifnot(tour_end <= num_selected)
+    }
+
     cali_sum <- rep(0, num_selected)
     for(tnd in 1L:num_selected) {
         if(chromosome[num_selected + tnd] > 0) {
@@ -208,25 +237,19 @@ get_fitness_f_ga_1 <- function(
         # its left half contains tours represented in spot numbers
         # its right half contains tour length of salesmen
         if(paranoid) {
-            stopifnot(length(chromosome) == 2 * num_selected)
-            stopifnot(
-                sum(
-                    chromosome[
-                        (num_selected + 1L):
-                        (2L * num_selected)
-                    ]
-                ) == num_selected
-            )
+            stop_if_not_valid_chromosome(chromosome, start_from_spot)
+            stopifnot(num_selected * 2 == length(chromosome))
         }
 
-        tour_begin_end <- get_tour_begin_end(chromosome, num_selected)
+        tour_begin_end <- get_tour_begin_end(chromosome, num_selected, paranoid)
         tour_sum <- get_multi_tour_len(
             chromosome          = chromosome,
             num_selected        = num_selected,
             tour_begin          = tour_begin_end$tour_begin,
             tour_end            = tour_begin_end$tour_end,
             distance_matrix     = distance_matrix,
-            start_from_spot     = start_from_spot
+            start_from_spot     = start_from_spot,
+            paranoid            = paranoid
         )
         cali_sum <- rep(0, num_selected)
         if(is.finite(max_cost_worker)) {
@@ -235,7 +258,8 @@ get_fitness_f_ga_1 <- function(
                 num_selected    = num_selected,
                 tour_begin      = tour_begin_end$tour_begin,
                 tour_end        = tour_begin_end$tour_end,
-                spot_cali_cost  = spot_cali_cost
+                spot_cali_cost  = spot_cali_cost,
+                paranoid        = paranoid
             )
         }
 
@@ -253,8 +277,14 @@ get_fitness_f_ga_1 <- function(
 
 get_compressed_chromosome <- function(
     chromosome,
-    num_selected
+    num_selected,
+    paranoid = TRUE
 ) {
+    if(paranoid) {
+        stop_if_not_valid_chromosome(chromosome)
+        stopifnot(num_selected * 2 == length(chromosome))
+    }
+
     # number of spots in each tour
     num_tour <- chromosome[(num_selected + 1L):(2L * num_selected)]
     valid_tours <- which(num_tour > 0)
@@ -273,23 +303,34 @@ ga_adjust_chromosome <- function(
     l_selected,
     distance_matrix,
     max_cost_worker,
-    spot_cali_cost = NULL,
-    start_from_spot = 1L
+    spot_cali_cost  = NULL,
+    start_from_spot = 1L,
+    paranoid        = TRUE
 ) {
+    if(paranoid) {
+        stopifnot(is.infinite(max_cost_worker) || is.vector(spot_cali_cost))
+    }
+
     num_selected <- as.integer(sum(l_selected > 0))
     chromosome <- get_compressed_chromosome(chromosome, num_selected)
 
     # repeat to split tours until constraints are met
-    repeat{
+    repeat {
+        if(paranoid) {
+            stop_if_not_valid_chromosome(chromosome, start_from_spot)
+            stopifnot(num_selected * 2 == length(chromosome))
+        }
+
         tour_num <- chromosome[(num_selected + 1L):(2L * num_selected)]
-        tour_begin_end <- get_tour_begin_end(chromosome, num_selected)
+        tour_begin_end <- get_tour_begin_end(chromosome, num_selected, paranoid)
         tour_sum <- get_multi_tour_len(
             chromosome          = chromosome,
             num_selected        = num_selected,
             tour_begin          = tour_begin_end$tour_begin,
             tour_end            = tour_begin_end$tour_end,
             distance_matrix     = distance_matrix,
-            start_from_spot     = start_from_spot
+            start_from_spot     = start_from_spot,
+            paranoid            = paranoid
         )
         cali_sum <- rep(0, num_selected)
         if(is.finite(max_cost_worker)) {
@@ -298,7 +339,8 @@ ga_adjust_chromosome <- function(
                 num_selected    = num_selected,
                 tour_begin      = tour_begin_end$tour_begin,
                 tour_end        = tour_begin_end$tour_end,
-                spot_cali_cost  = spot_cali_cost
+                spot_cali_cost  = spot_cali_cost,
+                paranoid        = paranoid
             )
         }
 
@@ -306,16 +348,28 @@ ga_adjust_chromosome <- function(
         #   nothing much can be done for this spot
         # this kind of case is considered "infeasible" using general solvers,
         #   but we still get a solution to meet as many constraints as possible
-        constraint_met <- (tour_num <= 1 ||
+        constraint_met <- (tour_num <= 1 |
             tour_sum + cali_sum <= max_cost_worker)
         if(all(constraint_met)) { break }
+
+        if(paranoid) {
+            stopifnot(tour_num[num_selected] == 0)
+        }
 
         tour_to_split <- which(!constraint_met)[1L]
         split_1 <- sample(x = 1:(tour_num[tour_to_split] - 1), size = 1L)
         split_2 <- tour_num[tour_to_split] - split_1
-        tour_num[(tour_to_split + 2L):num_selected] <-
-            tour_num[(tour_to_split + 1L):(num_selected - 1L)]
+        if(tour_to_split + 2L <= num_selected) {
+            indexes_after_split <- (tour_to_split + 1L):(num_selected - 1L)
+            tour_num[indexes_after_split + 1L] <- tour_num[indexes_after_split]
+        }
         tour_num[tour_to_split:(tour_to_split + 1L)] <- c(split_1, split_2)
+
+        if(paranoid) {
+            stopifnot(length(tour_num) == num_selected)
+        }
+
+        # update chromosome
         chromosome[(num_selected + 1L):(2L * num_selected)] <- tour_num
     }
     chromosome # RETURN
@@ -325,9 +379,11 @@ get_population_f_ga_1 <- function(
     l_selected,
     distance_matrix,
     max_cost_worker,
-    spot_cali_cost = NULL
+    spot_cali_cost  = NULL,
+    start_from_spot = 1L,
+    paranoid        = TRUE
 ) {
-    function() {
+    function(object) {
 
     } # RETURN
 }
@@ -336,9 +392,10 @@ get_crossover_f_ga_1 <- function(
     l_selected,
     distance_matrix,
     max_cost_worker,
-    spot_cali_cost = NULL
+    spot_cali_cost  = NULL,
+    paranoid        = TRUE
 ) {
-    function() {
+    function(object) {
 
     } # RETURN
 }
@@ -347,9 +404,10 @@ get_mutation_f_ga_1 <- function(
     l_selected,
     distance_matrix,
     max_cost_worker,
-    spot_cali_cost = NULL
+    spot_cali_cost  = NULL,
+    paranoid        = TRUE
 ) {
-    function() {
+    function(object) {
 
     } # RETURN
 }
@@ -358,8 +416,8 @@ get_multi_paths_ga_1 <<- function(
     l_selected,             # selected spots, len L vector
     distance_matrix,        # distance matrix
     max_cost_worker = +Inf, # max workload of any single worker
-    spot_cali_cost = NULL,  # per-spot calibration cost
-    paranoid = TRUE         # enable/disable paranoid checks
+    spot_cali_cost  = NULL,  # per-spot calibration cost
+    paranoid        = TRUE         # enable/disable paranoid checks
 ) {
     if(is.null(l_selected)) {
         l_selected <- rep(1L, NUM_SPOTS)
@@ -393,6 +451,70 @@ get_multi_paths_ga_1 <<- function(
             stopifnot(all(spot_cali_cost >= 0))
         }
     }
+
+    num_selected <- as.integer(sum(l_selected > 0))
+
+    ga_pop_size <- 50L
+    ga_max_iter <- 200L
+    ga_obj <- ga(
+        type = "permutation",
+        lower = c(
+            rep(1, num_selected),
+            rep(0, num_selected)
+        ),
+        upper = c(
+            rep(NUM_SPOTS, num_selected),
+            rep(NUM_SPOTS, num_selected)
+        ),
+        fitness = get_fitness_f_ga_1(
+            l_selected      = l_selected,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            start_from_spot = 1L,
+            paranoid        = paranoid
+        ),
+        population = get_population_f_ga_1(
+            l_selected      = l_selected,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            start_from_spot = 1L,
+            paranoid        = paranoid
+        ),
+        crossover = get_crossover_f_ga_1(
+            l_selected      = l_selected,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            paranoid        = paranoid
+        ),
+        mutation = get_mutation_f_ga_1(
+            l_selected      = l_selected,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            paranoid        = paranoid
+        ),
+        # min = as.vector(mat_w_zero),    # these settings do not work for bin
+        # max = as.vector(capacity_mat),  # these settings do not work for bin
+        popSize = ga_pop_size,  # default value = 50
+        pcrossover = 0.8,       # default value = 0.8
+        pmutation = 0.2,        # default value = 0.1
+        elitism = round(0.05 * ga_pop_size),
+        updatePop = FALSE,      # do not use this experimental feature for now
+        # postFitness = ga_post_fit_f,
+        maxiter = ga_max_iter,  # default value = 100
+        run = 20L,              # default value = maxiter
+        maxFitness = 1,
+        names = NULL,
+        suggestions = NULL
+        # parallel = ga_parallel,
+        # monitor = ga_monitor_f,        # do not plot during execution
+        # seed = ga_seed
+    )
+
+    ga_obj # RETURN
 }
 
 } # ENDIF
