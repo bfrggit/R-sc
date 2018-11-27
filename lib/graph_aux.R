@@ -1,7 +1,7 @@
 # graph_aux.R
 #
 # Created: 2018-10-04
-# Updated: 2018-10-08
+# Updated: 2018-11-26
 #  Author: Charles Zhu
 #
 if(!exists("EX_GRAPH_AUX_R")) {
@@ -51,6 +51,7 @@ is_valid_single_path_matrix <<- function(
 
         if(!is.null(must_start_from_spot)) {
             stopifnot(is.integer(must_start_from_spot))
+            stopifnot(length(must_start_from_spot) == 1L)
             stopifnot(must_start_from_spot > 0L &&
                       must_start_from_spot <= NUM_SPOTS)
         }
@@ -111,6 +112,7 @@ is_valid_multi_paths_array <<- function(
         stopifnot(all(paths_array) >= 0L)
 
         stopifnot(is.integer(must_start_from_spot))
+        stopifnot(length(must_start_from_spot) == 1L)
         stopifnot(must_start_from_spot > 0L &&
                   must_start_from_spot <= NUM_SPOTS)
     }
