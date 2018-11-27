@@ -1,6 +1,7 @@
 # pp_ga_1.R
 #
 # Created: 2018-11-20
+# Updated: 2018-11-26
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -19,6 +20,31 @@ if(!exists("EX_PP_GA_1_R")) {
 source("lib/basic.R")
 
 suppressPackageStartupMessages(library(GA))
+
+is_valid_chromosome <- function(chromosome, start_from_spot) {
+    stopifnot(is.integer(start_from_spot))
+    stopifnot(length(start_from_spot) == 1L)
+    stopifnot(start_from_spot > 0)
+
+    if(!is.vector(chromosome)) return(FALSE)
+    if(!is.numeric(chromosome)) return(FALSE)
+    if(any(as.integer(chromosome) != chromosome)) return(FALSE)
+    if(length(chromosome) %% 2L != 0) return(FALSE)
+
+    num_selected <- length(chromosome) %/% 2L
+    order_spots <- chromosome[1L:num_selected]
+    if(any(order_spots < 1)) return(FALSE)
+    if(any(order_spots > NUM_SPOTS)) return(FALSE)
+    if(any(order_spots == start_from_spot)) return(FALSE)
+    if(length(unique(order_spots)) != length(order_spots)) return(FALSE)
+
+    num_tour <- chromosome[(num_selected + 1L):length(chromosome)]
+    if(length(num_tour) != num_selected) return(FALSE)
+    if(any(num_tour < 0)) return(FALSE)
+    if(sum(num_tour) != num_selected) return(FALSE)
+
+    TRUE # RETURN
+}
 
 # get_tour_len <- function(
 #     tour_vec,           # vector of spots to visit in order except for depot
@@ -48,8 +74,17 @@ get_tour_len <- function(
     tour_begin,
     tour_end,
     distance_matrix,
-    start_from_spot = 1L
+    start_from_spot,
+    paranoid = TRUE
 ) {
+    if(paranoid) {
+        stopifnot(is_valid_chromosome(chromosome, start_from_spot))
+        num_selected <- length(chromosome) %/% 2L
+
+        stopifnot(tour_begin <= num_selected)
+        stopifnot(tour_end <= num_selected)
+    }
+
     num_tour <- tour_end - tour_begin + 1L # number of non-depot spots
     tour_sum <- 0
 
@@ -75,6 +110,80 @@ get_tour_len <- function(
         ]
     }
     tour_sum # RETURN
+}
+
+# compute begin/end indexes of each tour in the chromosome
+get_tour_begin_end <- function(
+    chromosome,
+    num_selected
+) {
+    tour_end <- as.integer(
+        cumsum(
+            chromosome[
+                (num_selected + 1L):
+                    (2L * num_selected)
+                ]
+        )
+    )
+    tour_begin <- 1L
+    if(num_selected > 1) {
+        tour_begin <- c(
+            tour_begin,
+            tour_end[1L:(num_selected - 1L)] + 1L
+        )
+    }
+
+    list(
+        tour_begin  = tour_begin,
+        tour_end    = tour_end
+    ) # RETURN
+}
+
+# travel distance/time of individual salesmen/workers
+# aux func to be called from other func
+# paranoid checks should have been done in those other func
+get_multi_tour_len <- function(
+    chromosome,
+    num_selected,
+    tour_begin,     # vector
+    tour_end,       # vector
+    distance_matrix,
+    start_from_spot
+) {
+    tour_sum <- rep(0, num_selected)
+    for(tnd in 1L:num_selected) {
+        if(chromosome[num_selected + tnd] > 0) {
+            tour_sum[tnd] <- get_tour_len(
+                chromosome      = chromosome,
+                tour_begin      = tour_begin[tnd],
+                tour_end        = tour_end[tnd],
+                distance_matrix = distance_matrix,
+                start_from_spot = start_from_spot
+            )
+        }
+    }
+    tour_sum # RETURN
+}
+
+# calibration cost of individual workers
+# aux func to be called from other func
+# paranoid checks should have been done in those other func
+get_multi_cali_sum <- function(
+    chromosome,
+    num_selected,
+    tour_begin,
+    tour_end,
+    spot_cali_cost
+) {
+    cali_sum <- rep(0, num_selected)
+    for(tnd in 1L:num_selected) {
+        if(chromosome[num_selected + tnd] > 0) {
+            cali_sum[tnd] <- sum(
+                spot_cali_cost[tour_begin[tnd]:tour_end[tnd]]
+            )
+        }
+    }
+    cali_sum # RETURN
 }
 
 get_fitness_f_ga_1 <- function(
@@ -110,37 +219,53 @@ get_fitness_f_ga_1 <- function(
             )
         }
 
-        # compute begin/end indexes of each tour in the chromosome
-        tour_end <- as.integer(
-            cumsum(
-                chromosome[
-                    (num_selected + 1L):
-                    (2L * num_selected)
-                ]
-            )
+        tour_begin_end <- get_tour_begin_end(chromosome, num_selected)
+        tour_sum <- get_multi_tour_len(
+            chromosome          = chromosome,
+            num_selected        = num_selected,
+            tour_begin          = tour_begin_end$tour_begin,
+            tour_end            = tour_begin_end$tour_end,
+            distance_matrix     = distance_matrix,
+            start_from_spot     = start_from_spot
         )
-        tour_begin <- 1L
-        if(num_selected > 1) {
-            tour_begin <- c(
-                tour_begin,
-                tour_end[1L:(num_selected - 1L)] + 1L
+        cali_sum <- rep(0, num_selected)
+        if(is.finite(max_cost_worker)) {
+            cali_sum <- get_multi_cali_sum(
+                chromosome      = chromosome,
+                num_selected    = num_selected,
+                tour_begin      = tour_begin_end$tour_begin,
+                tour_end        = tour_begin_end$tour_end,
+                spot_cali_cost  = spot_cali_cost
             )
         }
 
-        multi_sum <- 0
-        for(tnd in 1L:num_selected) {
-            if(chromosome[num_selected + tnd] > 0) {
-                multi_sum <- multi_sum + get_tour_len(
-                    chromosome      = chromosome,
-                    tour_begin      = tour_begin[tnd],
-                    tour_end        = tour_end[tnd],
-                    distance_matrix = distance_matrix,
-                    start_from_spot = start_from_spot
-                )
-            }
-        }
-        multi_sum # RETURN
+        # check if any individual cost violates max cost per worker constraint
+        # if(any(tour_sum + cali_sum > max_cost_worker)) {
+        #     return(0)
+        # }
+        # will not do this check
+        # will adjust solutions in a separate func instead
+
+        # fitness value
+        1 / (sum(tour_sum) + 1) # RETURN
     } # RETURN
+}
+
+get_compressed_chromosome <- function(
+    chromosome,
+    num_selected
+) {
+    # number of spots in each tour
+    num_tour <- chromosome[(num_selected + 1L):(2L * num_selected)]
+    valid_tours <- which(num_tour > 0)
+    count_valid <- length(valid_tours)
+    stopifnot(count_valid > 0)
+    if(count_valid == num_selected) { return(chromosome) }
+
+    num_tour[1L:count_valid] <- num_tour[valid_tours]
+    num_tour[(count_valid + 1L):num_selected] <- 0
+    chromosome[(num_selected + 1L):(2L * num_selected)] <- num_tour
+    chromosome # RETURN
 }
 
 ga_adjust_chromosome <- function(
@@ -148,9 +273,52 @@ ga_adjust_chromosome <- function(
     l_selected,
     distance_matrix,
     max_cost_worker,
-    spot_cali_cost = NULL
+    spot_cali_cost = NULL,
+    start_from_spot = 1L
 ) {
+    num_selected <- as.integer(sum(l_selected > 0))
+    chromosome <- get_compressed_chromosome(chromosome, num_selected)
 
+    # repeat to split tours until constraints are met
+    repeat{
+        tour_num <- chromosome[(num_selected + 1L):(2L * num_selected)]
+        tour_begin_end <- get_tour_begin_end(chromosome, num_selected)
+        tour_sum <- get_multi_tour_len(
+            chromosome          = chromosome,
+            num_selected        = num_selected,
+            tour_begin          = tour_begin_end$tour_begin,
+            tour_end            = tour_begin_end$tour_end,
+            distance_matrix     = distance_matrix,
+            start_from_spot     = start_from_spot
+        )
+        cali_sum <- rep(0, num_selected)
+        if(is.finite(max_cost_worker)) {
+            cali_sum <- get_multi_cali_sum(
+                chromosome      = chromosome,
+                num_selected    = num_selected,
+                tour_begin      = tour_begin_end$tour_begin,
+                tour_end        = tour_begin_end$tour_end,
+                spot_cali_cost  = spot_cali_cost
+            )
+        }
+
+        # note that if a tour of length 1 still violates the constraint,
+        #   nothing much can be done for this spot
+        # this kind of case is considered "infeasible" using general solvers,
+        #   but we still get a solution to meet as many constraints as possible
+        constraint_met <- (tour_num <= 1 ||
+            tour_sum + cali_sum <= max_cost_worker)
+        if(all(constraint_met)) { break }
+
+        tour_to_split <- which(!constraint_met)[1L]
+        split_1 <- sample(x = 1:(tour_num[tour_to_split] - 1), size = 1L)
+        split_2 <- tour_num[tour_to_split] - split_1
+        tour_num[(tour_to_split + 2L):num_selected] <-
+            tour_num[(tour_to_split + 1L):(num_selected - 1L)]
+        tour_num[tour_to_split:(tour_to_split + 1L)] <- c(split_1, split_2)
+        chromosome[(num_selected + 1L):(2L * num_selected)] <- tour_num
+    }
+    chromosome # RETURN
 }
 
 get_population_f_ga_1 <- function(
