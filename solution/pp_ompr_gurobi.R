@@ -19,6 +19,8 @@
 if(!exists("EX_PP_OMPR_GUROBI_R")) {
     EX_PP_OMPR_GUROBI_R <<- TRUE
 
+library(magrittr)
+suppressPackageStartupMessages(library(dplyr))
 library(ompr)
 library(ompr.roi)
 library(ROI.plugin.gurobi)
