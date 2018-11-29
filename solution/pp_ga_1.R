@@ -1,7 +1,7 @@
 # pp_ga_1.R
 #
 # Created: 2018-11-20
-# Updated: 2018-11-27
+# Updated: 2018-11-28
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -44,36 +44,13 @@ stop_if_not_valid_chromosome <- function(
     stopifnot(length(unique(order_spots)) == length(order_spots))
     stopifnot(all(order_spots != start_from_spot))
 
-    num_tour <- chromosome[(num_selected + 1L):length(chromosome)]
-    stopifnot(length(num_tour) == num_selected)
-    stopifnot(all(num_tour >= 0))
-    stopifnot(sum(num_tour) == num_selected)
+    tour_num <- chromosome[-(1L:num_selected)]
+    stopifnot(length(tour_num) == num_selected)
+    stopifnot(all(tour_num >= 0))
+    stopifnot(sum(tour_num) == num_selected)
 }
 
-# get_tour_len <- function(
-#     tour_vec,           # vector of spots to visit in order except for depot
-#     distance_matrix,
-#     start_from_spot = 1L
-# ) {
-#     num_tour <- length(tour_vec) # number of non-depot spots in this tour
-#     tour_sum <- 0
-#
-#     # an empty tour has length 0
-#     if(num_tour == 0) { return(tour_sum) }
-#
-#     # going from and back to depot is enough, if there is only one spot
-#     tour_sum <- tour_sum + distance_matrix[start_from_spot, tour_vec[1L]]
-#     tour_sum <- tour_sum + distance_matrix[tour_vec[num_tour], start_from_spot]
-#     if(num_tour == 1) { return(tour_sum) }
-#
-#     # add distance between consecutive pairs of spots in the given tour
-#     for(j in 1L:(num_tour - 1L)) {
-#         tour_sum <- tour_sum + distance_matrix[tour_vec[j], tour_vec[j + 1L]]
-#     }
-#     tour_sum # RETURN
-# }
-#
-get_tour_len <- function(
+ga_get_tour_len <- function(
     chromosome,
     tour_begin,
     tour_end,
@@ -90,11 +67,11 @@ get_tour_len <- function(
         stopifnot(tour_end <= num_selected)
     }
 
-    num_tour <- tour_end - tour_begin + 1L # number of non-depot spots
+    tour_num <- tour_end - tour_begin + 1L # number of non-depot spots
     tour_sum <- 0
 
     # an empty tour has length 0
-    if(num_tour < 1) { return(tour_sum) }
+    if(tour_num < 1) { return(tour_sum) }
 
     # going from and back to depot is enough, if there is only one spot
     tour_sum <- tour_sum + distance_matrix[
@@ -105,7 +82,7 @@ get_tour_len <- function(
         chromosome[tour_end],
         start_from_spot
     ]
-    if(num_tour == 1) { return(tour_sum) }
+    if(tour_num == 1) { return(tour_sum) }
 
     # add distance between consecutive pairs of spots in the given tour
     for(j in tour_begin:(tour_end - 1L)) {
@@ -118,7 +95,7 @@ get_tour_len <- function(
 }
 
 # compute begin/end indexes of each tour in the chromosome
-get_tour_begin_end <- function(
+ga_get_tour_range <- function(
     chromosome,
     num_selected,
     paranoid
@@ -153,7 +130,7 @@ get_tour_begin_end <- function(
 # travel distance/time of individual salesmen/workers
 # aux func to be called from other func
 # paranoid checks should have been done in those other func
-get_multi_tour_len <- function(
+ga_get_multi_tour_len <- function(
     chromosome,
     num_selected,
     tour_begin,     # vector
@@ -173,7 +150,7 @@ get_multi_tour_len <- function(
     tour_sum <- rep(0, num_selected)
     for(tnd in 1L:num_selected) {
         if(chromosome[num_selected + tnd] > 0) {
-            tour_sum[tnd] <- get_tour_len(
+            tour_sum[tnd] <- ga_get_tour_len(
                 chromosome      = chromosome,
                 tour_begin      = tour_begin[tnd],
                 tour_end        = tour_end[tnd],
@@ -189,7 +166,7 @@ get_multi_tour_len <- function(
 # calibration cost of individual workers
 # aux func to be called from other func
 # paranoid checks should have been done in those other func
-get_multi_cali_sum <- function(
+ga_get_multi_cali_sum <- function(
     chromosome,
     num_selected,
     tour_begin,
@@ -242,8 +219,8 @@ get_fitness_f_ga_1 <- function(
             stopifnot(length(chromosome) == num_selected * 2L)
         }
 
-        tour_begin_end <- get_tour_begin_end(chromosome, num_selected, paranoid)
-        tour_sum <- get_multi_tour_len(
+        tour_begin_end <- ga_get_tour_range(chromosome, num_selected, paranoid)
+        tour_sum <- ga_get_multi_tour_len(
             chromosome          = chromosome,
             num_selected        = num_selected,
             tour_begin          = tour_begin_end$tour_begin,
@@ -254,7 +231,7 @@ get_fitness_f_ga_1 <- function(
         )
         cali_sum <- rep(0, num_selected)
         if(is.finite(max_cost_worker)) {
-            cali_sum <- get_multi_cali_sum(
+            cali_sum <- ga_get_multi_cali_sum(
                 chromosome      = chromosome,
                 num_selected    = num_selected,
                 tour_begin      = tour_begin_end$tour_begin,
@@ -276,8 +253,8 @@ get_fitness_f_ga_1 <- function(
     } # RETURN
 }
 
-# shift all zeros in num_tour (i.e. right half of chromosome) to the right
-get_compressed_chromosome <- function(
+# shift all zeros in tour_num (i.e. right half of chromosome) to the right
+ga_compress_chromosome <- function(
     chromosome,
     num_selected,
     paranoid
@@ -288,15 +265,15 @@ get_compressed_chromosome <- function(
     }
 
     # number of spots in each tour
-    num_tour <- chromosome[(num_selected + 1L):(2L * num_selected)]
-    valid_tours <- which(num_tour > 0)
+    tour_num <- chromosome[-(1L:num_selected)]
+    valid_tours <- which(tour_num > 0)
     count_valid <- length(valid_tours)
     stopifnot(count_valid > 0)
     if(count_valid == num_selected) { return(chromosome) }
 
-    num_tour[1L:count_valid] <- num_tour[valid_tours]
-    num_tour[(count_valid + 1L):num_selected] <- 0
-    chromosome[(num_selected + 1L):(2L * num_selected)] <- num_tour
+    tour_num[1L:count_valid] <- tour_num[valid_tours]
+    tour_num[-(1L:count_valid)] <- 0
+    chromosome[-(1L:num_selected)] <- tour_num
     chromosome # RETURN
 }
 
@@ -315,7 +292,7 @@ ga_adjust_chromosome <- function(
     }
 
     num_selected <- as.integer(sum(l_selected > 0))
-    chromosome <- get_compressed_chromosome(
+    chromosome <- ga_compress_chromosome(
         chromosome      = chromosome,
         num_selected    = num_selected,
         paranoid        = paranoid
@@ -328,9 +305,9 @@ ga_adjust_chromosome <- function(
             stopifnot(length(chromosome) == num_selected * 2L)
         }
 
-        tour_num <- chromosome[(num_selected + 1L):(2L * num_selected)]
-        tour_begin_end <- get_tour_begin_end(chromosome, num_selected, paranoid)
-        tour_sum <- get_multi_tour_len(
+        tour_num <- chromosome[-(1L:num_selected)]
+        tour_begin_end <- ga_get_tour_range(chromosome, num_selected, paranoid)
+        tour_sum <- ga_get_multi_tour_len(
             chromosome          = chromosome,
             num_selected        = num_selected,
             tour_begin          = tour_begin_end$tour_begin,
@@ -341,7 +318,7 @@ ga_adjust_chromosome <- function(
         )
         cali_sum <- rep(0, num_selected)
         if(is.finite(max_cost_worker)) {
-            cali_sum <- get_multi_cali_sum(
+            cali_sum <- ga_get_multi_cali_sum(
                 chromosome      = chromosome,
                 num_selected    = num_selected,
                 tour_begin      = tour_begin_end$tour_begin,
@@ -363,6 +340,12 @@ ga_adjust_chromosome <- function(
             stopifnot(tour_num[num_selected] == 0)
         }
 
+        # by doing this split we are assuming the triangule inequality holds
+        # so that going from/back to the depot directly is always fater than
+        #   taking some additional routes, which guarantees
+        #   the resulting two tours are both shorter than the tour we split
+        # note that the two tours together will also be no shorter than the
+        #   tour we split, suggested by the triangle inequality
         tour_to_split <- which(!constraint_met)[1L]
         split_1 <- sample(x = 1:(tour_num[tour_to_split] - 1), size = 1L)
         split_2 <- tour_num[tour_to_split] - split_1
@@ -377,13 +360,13 @@ ga_adjust_chromosome <- function(
         }
 
         # update chromosome
-        chromosome[(num_selected + 1L):(2L * num_selected)] <- tour_num
+        chromosome[-(1L:num_selected)] <- tour_num
     }
     chromosome # RETURN
 }
 
 # used in the generation of initial population
-get_random_chromosome <- function(
+ga_get_random_chromosome <- function(
     l_selected
 ) {
     which_selected <- which(l_selected > 0)
@@ -393,24 +376,24 @@ get_random_chromosome <- function(
         size = num_selected,
         replace = FALSE
     )
-    num_tour <- rep(0, num_selected)
+    tour_num <- rep(0, num_selected)
     spots_left <- num_selected
     for(tnd in 1L:num_selected) {
-        num_tour[tnd] <- sample(x = 1L:spots_left, size = 1L)
-        spots_left <- spots_left - num_tour[tnd]
+        tour_num[tnd] <- sample(x = 1L:spots_left, size = 1L)
+        spots_left <- spots_left - tour_num[tnd]
         if(spots_left < 1) { break }
     }
-    chromosome <- c(order_spots, num_tour) # RETURN
+    chromosome <- c(order_spots, tour_num) # RETURN
 }
 
 # used as suggestion
-get_naive_chromosome <- function(
+ga_get_naive_chromosome <- function(
     l_selected
 ) {
     which_selected <- which(l_selected > 0)
     num_selected <- length(which_selected)
-    num_tour <- rep(1, num_selected)
-    chromosome <- c(which_selected, num_tour) # RETURN
+    tour_num <- rep(1, num_selected)
+    chromosome <- c(which_selected, tour_num) # RETURN
 }
 
 get_population_f_ga_1 <- function(
@@ -433,7 +416,7 @@ get_population_f_ga_1 <- function(
         # actually generate each chromosome
         for(pnd in 1L:object@popSize) {
             chromosome <- ga_adjust_chromosome(
-                chromosome      = get_random_chromosome(l_selected),
+                chromosome      = ga_get_random_chromosome(l_selected),
                 l_selected      = l_selected,
                 distance_matrix = distance_matrix,
                 max_cost_worker = max_cost_worker,
@@ -532,7 +515,7 @@ get_crossover_f_ga_1 <- function(
 }
 
 # use the three-opt local search to refine a single tour
-refine_tour_three_opt <- function(
+ga_refine_tour_three_opt <- function(
     chromosome,
     tour_begin,
     tour_end,
@@ -549,71 +532,187 @@ refine_tour_three_opt <- function(
     # we need at least 6 edges to use the three-opt local search
     if(num_edges_tour < 6) { return(chromosome) }
 
-    # for each group of edges
-    numeric(3L) -> nf -> nt -> ef -> et
-    for(jnd in 1L:(num_edges_tour - 4L)) {
-        nt[1L] <- tour_ref + jnd
-        nf[1L] <- nt[1L] - 1L
-        if(jnd == 1) {
-            ef[1L] <- start_from_spot
-        } else ef[1L] <- chromosome[nf[1L]]
-        et[1L] <- chromosome[nt[1L]]
+    repeat {
+        flag_update <- FALSE
 
-        kup <- num_edges_tour - 2L
-        if(jnd == 1) { kup <- kup - 1L }
-        for(knd in (jnd + 2L):kup) {
-            nt[2L] <- tour_ref + knd
-            nf[2L] <- nt[2L] - 1L
-            ef[2L] <- chromosome[nf[2L]]
-            et[2L] <- chromosome[nt[2L]]
+        # nf, nt: where to find the indexes of from/to spots in the chromosome
+        #         can be computed easily from edge ids (i.e. jnd, knd, lnd)
+        # ef, et: actual indexes of from/to spots
+        numeric(3L) -> nf -> nt -> ef -> et
 
-            lup <- num_edges_tour
-            if(jnd == 1) { lup <- lup - 1L }
-            for(lnd in (knd + 2L):lup) {
-                nt[3L] <- tour_ref + lnd
-                nf[3L] <- nt[3L] - 1L
-                ef[3L] <- chromosome[nf[3L]]
-                if(lnd == num_edges_tour) {
-                    et[3L] <- start_from_spot
-                } else et[3L] <- chromosome[nt[3L]]
+        # for each group of three edges (using nested for loops)
+        for(jnd in 1L:(num_edges_tour - 4L)) {
+            nt[1L] <- tour_ref + jnd
+            nf[1L] <- nt[1L] - 1L
+            if(jnd == 1) {
+                ef[1L] <- start_from_spot
+            } else ef[1L] <- chromosome[nf[1L]]
+            et[1L] <- chromosome[nt[1L]]
 
-                sum_old <- 0
-                sum_new <- 0
-                for(selected_edge in 1L:3L) {
-                    sum_old <- sum_old + distance_matrix[
-                        ef[selected_edge],
-                        et[selected_edge]
-                    ]
-                    sum_new <- sum_new + distance_matrix[
-                        ef[selected_edge],
-                        et[selected_edge %% 3L + 1L]
-                    ]
+            kup <- num_edges_tour - 2L
+            if(jnd == 1) { kup <- kup - 1L }
+            for(knd in (jnd + 2L):kup) {
+                nt[2L] <- tour_ref + knd
+                nf[2L] <- nt[2L] - 1L
+                ef[2L] <- chromosome[nf[2L]]
+                et[2L] <- chromosome[nt[2L]]
+
+                lup <- num_edges_tour
+                if(jnd == 1) { lup <- lup - 1L }
+                for(lnd in (knd + 2L):lup) {
+                    nt[3L] <- tour_ref + lnd
+                    nf[3L] <- nt[3L] - 1L
+                    ef[3L] <- chromosome[nf[3L]]
+                    if(lnd == num_edges_tour) {
+                        et[3L] <- start_from_spot
+                    } else et[3L] <- chromosome[nt[3L]]
+
+                    sum_old <- 0
+                    sum_new <- 0
+                    for(selected_edge in 1L:3L) {
+                        sum_old <- sum_old + distance_matrix[
+                            ef[selected_edge],
+                            et[selected_edge]
+                        ]
+                        sum_new <- sum_new + distance_matrix[
+                            ef[selected_edge],
+                            et[selected_edge %% 3L + 1L]
+                        ]
+                    }
+
+                    if(sum_new < sum_old) {
+                        # reorder chromosome
+                        # -1 bg +1 +2 f1 t1 +1 +2 +3 f2 t2 +1 f3 t3 +1 +2 nd +1
+                        # sf----------|   |----------|   |----|   |----------sf
+                        # old:        A              B        C               D
+                        # new:        A              C        B               D
+                        #
+                        # example:
+                        #   bg == 1, nd == 5, chromosome == c(2, 3, 4, 5, 6)
+                        #   nf == c(0, 2, 4)
+                        #   nt == c(1, 3, 5)
+                        #   chromosome[1:4] <- c(
+                        #       chromosome[3:4],
+                        #       chromosome[1:2]
+                        #   ), which means chromosome <- c(4, 5, 2, 3, 6)
+                        #
+                        chromosome[nt[1L]:nf[3L]] <- c(
+                            chromosome[nt[2L]:nf[3L]],
+                            chromosome[nt[1L]:nf[2L]]
+                        )
+                        flag_update <- TRUE
+                        break
+                    }
                 }
+                if(flag_update) { break }
+            }
+            if(flag_update) { break }
+        }
+        if(!flag_update) { break }
+    }
+    chromosome # RETURN
+}
 
-                if(sum_new < sum_old) {
-                    # reorder chromosome
-                    # -1 bg +1 +2 f1 t1 +1 +2 +3 f2 t2 +1 f3 t3 +1 +2 nd +1
-                    # sf----------|   |----------|   |----|   |----------sf
-                    # old:        A              B        C               D
-                    # new:        A              C        B               D
-                    #
-                    # example:
-                    #   bg == 1, nd == 5, chromosome == c(2, 3, 4, 5, 6)
-                    #   nf == c(0, 2, 4)
-                    #   nt == c(1, 3, 5)
-                    #   chromosome[1:4] <- c(
-                    #       chromosome[3:4],
-                    #       chromosome[1:2]
-                    #   ), which means chromosome <- c(4, 5, 2, 3, 6)
-                    #
-                    chromosome[nt[1L]:nf[3L]] <- c(
-                        chromosome[nt[2L]:nf[3L]],
-                        chromosome[nt[1L]:nf[2L]]
-                    )
-                    return(chromosome)
+# merge short tours to create a valid long tour
+ga_merge_tours <- function(
+    chromosome,
+    num_selected,
+    distance_matrix,
+    max_cost_worker,
+    spot_cali_cost,
+    start_from_spot,
+    paranoid
+) {
+    if(paranoid) {
+        stop_if_not_valid_chromosome(chromosome, start_from_spot)
+
+        stopifnot(is.integer(num_selected))
+        stopifnot(length(num_selected) == 1)
+    }
+
+    repeat {
+        tour_begin_end <- ga_get_tour_range(chromosome, num_selected, paranoid)
+        tour_sum <- ga_get_multi_tour_len(
+            chromosome          = chromosome,
+            num_selected        = num_selected,
+            tour_begin          = tour_begin_end$tour_begin,
+            tour_end            = tour_begin_end$tour_end,
+            distance_matrix     = distance_matrix,
+            start_from_spot     = start_from_spot,
+            paranoid            = paranoid
+        )
+        cali_sum <- rep(0, num_selected)
+        if(is.finite(max_cost_worker)) {
+            cali_sum <- ga_get_multi_cali_sum(
+                chromosome      = chromosome,
+                num_selected    = num_selected,
+                tour_begin      = tour_begin_end$tour_begin,
+                tour_end        = tour_begin_end$tour_end,
+                spot_cali_cost  = spot_cali_cost,
+                paranoid        = paranoid
+            )
+        }
+        cost_sum <- tour_sum + cali_sum # total cost for each worker
+
+        tour_num <- chromosome[-(1L:num_selected)]
+        valid_tours <- which(tour_num > 0)
+        count_valid <- length(valid_tours)
+        if(count_valid < 2) { break }
+
+        flag_update <- FALSE
+
+        # ns, nl: where to find indexes of begin/end of each tour in chromosome
+        # es, el: actual indexes of start/last spots in each tour,
+        #         excluding the depot
+        numeric(2L) -> ns -> nl -> es -> el
+
+        # for each pair of tours
+        for(jnd in 1L:(count_valid - 1L)) {
+            tour_j <- valid_tours[jnd]
+            ns[1L] <- tour_begin_end$tour_begin[tour_j]
+            nl[1L] <- tour_begin_end$tour_end[tour_j]
+            es[1L] <- chromosome[ns[1L]]
+            el[1L] <- chromosome[nl[1L]]
+
+            for(knd in (jnd + 1L):count_valid) {
+                tour_k <- valid_tours[knd]
+                ns[2L] <- tour_begin_end$tour_begin[tour_k]
+                nl[2L] <- tour_begin_end$tour_end[tour_k]
+                es[2L] <- chromosome[ns[2L]]
+                el[2L] <- chromosome[nl[2L]]
+
+                cost_sum_both <- cost_sum[tour_j] + cost_sum[tour_k]
+                d_cost <- map_graph_distances[el[1L], es[2L]] -
+                    map_graph_distances[el[1L], start_from_spot] -
+                    map_graph_distances[start_from_spot, es[2L]]
+
+                if(d_cost <= 0 && cost_sum_both + d_cost <= max_cost_worker) {
+                    if(jnd + 1L < knd) {
+                        if(paranoid) {
+                            stopifnot(ns[2L] - nl[1L] > 1)
+                        }
+
+                        # swap affected section with the spots in tour k
+                        # sj +1 +2 +3 lj +1 +2 +3 +4 +5 sk +1 +2 +3 +4 lk
+                        #                 |-----------|  |--------------|
+                        tour_k_len <- nl[2L] - ns[2L] + 1L
+                        affected_sec <- chromosome[(nl[1L] + 1L):(ns[2L] - 1L)]
+                        chromosome[(nl[1L] + 1L):(nl[1L] + tour_k_len)] <-
+                            chromosome[ns[2L]:nl[2L]]
+                        chromosome[(nl[1L] + tour_k_len + 1L):nl[2L]] <-
+                            affected_sec
+                    }
+                    tour_num[tour_j] <- tour_num[tour_j] + tour_num[tour_k]
+                    tour_num[tour_k] <- 0
+                    chromosome[-(1L:num_selected)] <- tour_num
+
+                    flag_update <- TRUE
+                    break
                 }
             }
+            if(flag_update) { break }
         }
+        if(!flag_update) { break }
     }
     chromosome # RETURN
 }
@@ -638,21 +737,29 @@ get_mutation_f_ga_1 <- function(
 
         joints <- sort(sample(x = 1L:num_selected, size = 2L, replace = FALSE))
         mutate <- object@population[parent, ]
+        mutate_modes <- c("switch", "reverse")
 
-        flag_refine <- FALSE
-        num_tour <- mutate[(num_selected + 1L):(2L * num_selected)]
-        if(any(num_tour >= 6)) {
-            flag_refine <- sample(c(FALSE, TRUE), size = 1L)
+        tour_num <- mutate[-(1L:num_selected)]
+        if(any(tour_num >= 6)) {
+            # if there is a long tour for any worker
+            # we may want to refine it with a local search (see below)
+            # now the probability to conduct local search is hard coded as 1/2
+            mutate_modes <- c(mutate_modes, "refine")
+        }
+        if(sum(tour_num > 0) > 1) {
+            mutate_modes <- c(mutate_modes, "merge")
         }
 
-        if(flag_refine) {
-            tour_refine <- sample(x = which(num_tour >= 6), size = 1L)
-            tour_begin_end <- get_tour_begin_end(
+        mutate_mode <- sample(x = mutate_modes, size = 1L)
+        need_adjust <- FALSE
+        if(mutate_mode == "refine") {
+            tour_refine <- sample(x = which(tour_num >= 6), size = 1L)
+            tour_begin_end <- ga_get_tour_range(
                 chromosome      = mutate,
                 num_selected    = num_selected,
                 paranoid        = paranoid
             )
-            mutate <- refine_tour_three_opt(
+            mutate <- ga_refine_tour_three_opt(
                 chromosome      = mutate,
                 tour_begin      = tour_begin_end$tour_begin[tour_refine],
                 tour_end        = tour_begin_end$tour_end[tour_refine],
@@ -661,14 +768,24 @@ get_mutation_f_ga_1 <- function(
                 paranoid        = paranoid
             )
             if(!paranoid) { return(mutate) }
-        } else {
-            flag_rev <- sample(c(FALSE, TRUE), size = 1L)
-            if(flag_rev) {
+        } else if(mutate_mode == "merge") {
+            mutate <- ga_merge_tours(
+                chromosome      = mutate,
+                num_selected    = num_selected,
+                distance_matrix = distance_matrix,
+                max_cost_worker = max_cost_worker,
+                spot_cali_cost  = spot_cali_cost,
+                start_from_spot = start_from_spot,
+                paranoid        = paranoid
+            )
+            if(!paranoid) { return(mutate) }
+        } else if(mutate_mode == "reverse") {
                 mutate[joints[2L]:joints[1L]] <-
                     mutate[joints[1L]:joints[2L]]
-            } else {
-                mutate[rev(joints)] <- mutate[joints]
-            }
+        } else if(mutate_mode == "switch") {
+            mutate[rev(joints)] <- mutate[joints]
+        } else {
+            stop()
         }
 
         ga_adjust_chromosome(
@@ -726,9 +843,9 @@ get_multi_paths_ga_1 <<- function(
 
     num_selected <- as.integer(sum(l_selected > 0))
 
-    ga_pop_size <- 50L
+    ga_pop_size <- 100L
     ga_max_iter <- 10L * num_selected
-    ga_run <- 3L * num_selected
+    ga_run <- 2L * num_selected
     ga_obj <- ga(
         type = "real-valued",
         fitness = get_fitness_f_ga_1(
@@ -775,14 +892,14 @@ get_multi_paths_ga_1 <<- function(
         ),
         popSize = ga_pop_size,  # default value = 50
         pcrossover = 0.8,       # default value = 0.8
-        pmutation = 0.2,        # default value = 0.1
+        pmutation = 0.1,        # default value = 0.1
         elitism = round(0.05 * ga_pop_size),
         updatePop = FALSE,      # do not use this experimental feature for now
         maxiter = ga_max_iter,  # default value = 100
         run = ga_run,           # default value = maxiter
         maxFitness = 0,
         names = NULL,
-        suggestions = get_naive_chromosome(l_selected),
+        suggestions = ga_get_naive_chromosome(l_selected),
         parallel = FALSE,
         # monitor = ga_monitor_f,
         seed = ga_seed
@@ -796,16 +913,16 @@ get_multi_paths_ga_1 <<- function(
     }
 
     if(paranoid) {
-        ga_solution <- get_compressed_chromosome(
+        ga_solution <- ga_compress_chromosome(
             chromosome      = ga_solution,
             num_selected    = num_selected,
             paranoid        = paranoid
         )
     }
-    num_tour <- ga_solution[(num_selected + 1L):(2L * num_selected)]
-    workers <- which(num_tour > 0)
+    tour_num <- ga_solution[-(1L:num_selected)]
+    workers <- which(tour_num > 0)
     num_workers <- length(workers)
-    tour_begin_end <- get_tour_begin_end(
+    tour_begin_end <- ga_get_tour_range(
         chromosome      = ga_solution,
         num_selected    = num_selected,
         paranoid        = paranoid
