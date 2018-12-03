@@ -1,7 +1,7 @@
 # pp_ga_1.R
 #
 # Created: 2018-11-20
-# Updated: 2018-11-28
+# Updated: 2018-12-03
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -532,6 +532,7 @@ ga_refine_tour_three_opt <- function(
     # we need at least 6 edges to use the three-opt local search
     if(num_edges_tour < 6) { return(chromosome) }
 
+    last_updated_edges <- rep(0L, 3L)
     repeat {
         flag_update <- FALSE
 
@@ -542,6 +543,7 @@ ga_refine_tour_three_opt <- function(
 
         # for each group of three edges (using nested for loops)
         for(jnd in 1L:(num_edges_tour - 4L)) {
+            # find the spots at the ends of the edges
             nt[1L] <- tour_ref + jnd
             nf[1L] <- nt[1L] - 1L
             if(jnd == 1) {
@@ -549,17 +551,36 @@ ga_refine_tour_three_opt <- function(
             } else ef[1L] <- chromosome[nf[1L]]
             et[1L] <- chromosome[nt[1L]]
 
+            # find the range of k to search
             kup <- num_edges_tour - 2L
             if(jnd == 1) { kup <- kup - 1L }
-            for(knd in (jnd + 2L):kup) {
+            krange <- (jnd + 2L):kup
+
+            for(knd in krange) {
+                # find the spots at the ends of the edges
                 nt[2L] <- tour_ref + knd
                 nf[2L] <- nt[2L] - 1L
                 ef[2L] <- chromosome[nf[2L]]
                 et[2L] <- chromosome[nt[2L]]
 
+                # find the range of l to search
                 lup <- num_edges_tour
                 if(jnd == 1) { lup <- lup - 1L }
-                for(lnd in (knd + 2L):lup) {
+                lrange <- (knd + 2L):lup
+
+                # try to avoid searched combinations
+                if(all(last_updated_edges > 0)) {
+                    if(jnd < last_updated_edges[1L]) {
+                        if(!(knd %in% last_updated_edges)) {
+                            lrange <- last_updated_edges[
+                                which(last_updated_edges %in% lrange)
+                            ]
+                        }
+                    }
+                }
+
+                for(lnd in lrange) {
+                    # find the spots at the ends of the edges
                     nt[3L] <- tour_ref + lnd
                     nf[3L] <- nt[3L] - 1L
                     ef[3L] <- chromosome[nf[3L]]
@@ -767,7 +788,6 @@ get_mutation_f_ga_1 <- function(
                 start_from_spot = start_from_spot,
                 paranoid        = paranoid
             )
-            if(!paranoid) { return(mutate) }
         } else if(mutate_mode == "merge") {
             mutate <- ga_merge_tours(
                 chromosome      = mutate,
@@ -778,7 +798,6 @@ get_mutation_f_ga_1 <- function(
                 start_from_spot = start_from_spot,
                 paranoid        = paranoid
             )
-            if(!paranoid) { return(mutate) }
         } else if(mutate_mode == "reverse") {
                 mutate[joints[2L]:joints[1L]] <-
                     mutate[joints[1L]:joints[2L]]
@@ -844,8 +863,8 @@ get_multi_paths_ga_1 <<- function(
     num_selected <- as.integer(sum(l_selected > 0))
 
     ga_pop_size <- 100L
-    ga_max_iter <- 10L * num_selected
-    ga_run <- 2L * num_selected
+    ga_max_iter <- 100L + 10L * num_selected
+    ga_run <- 20L + num_selected
     ga_obj <- ga(
         type = "real-valued",
         fitness = get_fitness_f_ga_1(
@@ -906,10 +925,13 @@ get_multi_paths_ga_1 <<- function(
     )
 
     ga_solution <- NULL
+    ga_fitness <<- NULL
     if(is.matrix(ga_obj@solution)) {
         ga_solution <- ga_obj@solution[1L, ]
+        ga_fitness <<- ga_obj@fitnessValue[1L]
     } else {
         ga_solution <- ga_obj@solution
+        ga_fitness <<- ga_obj@fitnessValue
     }
 
     if(paranoid) {
@@ -965,3 +987,21 @@ get_multi_paths_ga_1 <<- function(
 }
 
 } # ENDIF
+
+# non-reachable section
+# used for manual tests
+if(FALSE) {
+
+rm(list = ls())
+load("t_pp/prep_RData/graph_60_4.RData")
+
+paths_array <- get_multi_paths_ga_1(
+  l_selected = c(0L, rep(1L, NUM_SPOTS - 1L)),
+  distance_matrix = map_graph_distances,
+  max_cost_worker = 1200,
+  spot_cali_cost = rep(0L, NUM_SPOTS),
+  ga_seed = 9L,
+  paranoid = FALSE
+)
+
+}
