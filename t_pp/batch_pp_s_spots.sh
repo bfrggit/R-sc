@@ -43,7 +43,7 @@ for case_graph in `seq 1 1 5`; do
 distance_fn=$(realpath "t_pp/prep_RData/graph_${num_spots}_${case_graph}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
-t_pp/t_pp_ga_1.R \
+t_pp/t_pp.R \
 --distance_file=${distance_fn} \
 --path_planner=${path_planner} \
 --max_cost_worker=1200 \

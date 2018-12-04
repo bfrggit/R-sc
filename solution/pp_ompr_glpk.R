@@ -30,7 +30,7 @@ source("lib/basic.R")
 get_multi_paths_ompr_glpk <<- function(
     l_selected,             # selected spots, len L vector
     distance_matrix,        # distance matrix
-    num_workers,            # number of workers (a.k.a. salesmen)
+    num_workers = NULL,    # number of workers (a.k.a. salesmen)
     fix_workers = FALSE,    # if solution must contain the exact num of workers
     max_cost_worker = +Inf, # max workload of any single worker
     spot_cali_cost = NULL,  # per-spot calibration cost

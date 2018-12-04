@@ -13,8 +13,9 @@ if(!exists("EX_PP_EACH_R")) {
 source("lib/basic.R")
 
 get_multi_paths_each <<- function(
-    l_selected,     # selected spots, len L vector
-    paranoid = TRUE # enable/disable paranoid checks
+    l_selected,         # selected spots, len L vector
+    paranoid = TRUE,    # enable/disable paranoid checks
+    ...
 ) {
     if(paranoid) {
         stopifnot(is.vector(l_selected))
