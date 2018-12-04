@@ -39,7 +39,7 @@ touch ${output_file}
 if [ $? -ne 0 ]; then exit $?; fi
 
 tail_lines=2
-for case_graph in `seq 1 1 5`; do
+for case_graph in `seq 1 1 20`; do
 distance_fn=$(realpath "t_pp/prep_RData/graph_${num_spots}_${case_graph}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
