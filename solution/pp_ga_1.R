@@ -824,7 +824,7 @@ get_multi_paths_ga_1 <<- function(
     distance_matrix,        # distance matrix
     max_cost_worker = +Inf, # max workload of any single worker
     spot_cali_cost  = NULL, # per-spot calibration cost
-    ga_seed         = NULL,
+    ga_seed         = 9L,
     paranoid        = TRUE  # enable/disable paranoid checks
 ) {
     if(is.null(l_selected)) {
