@@ -34,7 +34,7 @@ if [ $? -ne 0 ]; then exit $?; fi
 for num_spots in $LIST_NUM_SPOTS; do
     num_edges_f=$(bc -l <<< "e(${POW_EDGES} * l(${num_spots}))")
     num_edges=$(printf "%.0f" ${num_edges_f})
-    for random_seed in `seq 1 1 5`; do
+    for random_seed in `seq 1 1 20`; do
         fn=$(realpath -m "${output_dir}/graph_${num_spots}_${random_seed}.RData")
         echo ${fn}
 
