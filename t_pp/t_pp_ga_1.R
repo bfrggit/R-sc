@@ -57,7 +57,7 @@ if(is.na(opt$distance_file)) {
 
 stopifnot(opt$max_cost_worker >= 0)
 
-PATH_PLANNERS <- c("ga_1")
+PATH_PLANNERS <- c("ga_1", "ga_grd_1")
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {
@@ -82,11 +82,7 @@ stopifnot(
 # load specified path planner
 if(fo_flag) { cat("Loading path planner...\n") }
 source(sprintf("solution/pp_%s.R", opt$path_planner))
-
-if(opt$path_planner == "ga_1") {
-    pp_f <- get_multi_paths_ga_1
-}
-stopifnot(exists("pp_f"))
+pp_f <- get(sprintf("get_multi_paths_%s", opt$path_planner))
 
 if(fo_flag) {
     if(!is.na(opt$additional_field) || !is.na(opt$additional_value)) {

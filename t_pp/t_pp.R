@@ -55,7 +55,7 @@ if(is.na(opt$distance_file)) {
 
 stopifnot(opt$max_cost_worker >= 0)
 
-PATH_PLANNERS <- c("each", "ga_1", "greedy_1", "ompr_glpk", "ompr_gurobi")
+PATH_PLANNERS <- c("each", "ga_1", "ga_grd_1", "greedy_1", "ompr_glpk", "ompr_gurobi")
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {

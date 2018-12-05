@@ -205,6 +205,7 @@ get_multi_paths_greedy_1 <<- function(
     distance_matrix,        # distance matrix
     max_cost_worker = +Inf, # max workload of any single worker
     spot_cali_cost  = NULL, # per-spot calibration cost
+    raw_return      = FALSE,
     paranoid        = TRUE  # enable/disable paranoid checks
 ) {
     if(is.null(l_selected)) {
@@ -364,6 +365,8 @@ get_multi_paths_greedy_1 <<- function(
             start_from_spot = 1L
         )
     }
+    if(raw_return) { return(tour_list) }
+
     num_workers <- length(tour_list)
 
     # construct solution data structure for my simulation framework
@@ -387,7 +390,7 @@ get_multi_paths_greedy_1 <<- function(
             stopifnot(length(tour) > 0)
         }
         paths_array[1L, tour[1L], worker] <- 1L
-        paths_array[tour[1L], tour_len, worker] <- 1L
+        paths_array[tour[tour_len], 1L, worker] <- 1L
 
         for(jnd in 1L:(tour_len - 1L)) {
             paths_array[
