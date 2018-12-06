@@ -1,6 +1,7 @@
 # pp_greedy_1.R
 #
 # Created: 2018-12-03
+# Updated: 2018-12-05
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -10,82 +11,7 @@ if(!exists("EX_PP_GREEDY_1_R")) {
     EX_PP_GREEDY_1_R <<- TRUE
 
 source("lib/basic.R")
-
-stop_if_not_valid_tour_list <- function(
-    tour_list,
-    l_selected = NULL,
-    start_from_spot = NULL
-) {
-    if(!is.null(start_from_spot)) {
-        stopifnot(is.integer(start_from_spot))
-        stopifnot(length(start_from_spot) == 1L)
-        stopifnot(start_from_spot > 0)
-    }
-
-    if(!is.null(l_selected)) {
-        stopifnot(is.vector(l_selected))
-        stopifnot(is.integer(l_selected))
-        stopifnot(all(l_selected == 0L | l_selected == 1L))
-
-        if(!is.null(start_from_spot)) {
-            stopifnot(l_selected[start_from_spot] == 0L)
-        }
-    }
-
-    stopifnot(is.list(tour_list))
-    stopifnot(all(unlist(lapply(tour_list, FUN = is.vector))))
-    stopifnot(all(unlist(lapply(tour_list, FUN = is.integer))))
-
-    tour_unlist <- unlist(tour_list)
-    stopifnot(all(tour_unlist > 0))
-    stopifnot(length(tour_unlist) == length(unique(tour_unlist)))
-
-    if(!is.null(start_from_spot)) {
-        stopifnot(all(tour_unlist != start_from_spot))
-    }
-
-    if(!is.null(l_selected)) {
-        which_selected <- which(l_selected == 1L)
-        stopifnot(all(tour_unlist %in% which_selected))
-        stopifnot(all(which_selected %in% tour_unlist))
-    }
-}
-
-stop_if_not_valid_tour <- function(
-    tour,
-    l_selected = NULL,
-    start_from_spot = NULL
-) {
-    if(!is.null(start_from_spot)) {
-        stopifnot(is.integer(start_from_spot))
-        stopifnot(length(start_from_spot) == 1L)
-        stopifnot(start_from_spot > 0)
-    }
-
-    if(!is.null(l_selected)) {
-        stopifnot(is.vector(l_selected))
-        stopifnot(is.integer(l_selected))
-        stopifnot(all(l_selected == 0L | l_selected == 1L))
-
-        if(!is.null(start_from_spot)) {
-            stopifnot(l_selected[start_from_spot] == 0L)
-        }
-    }
-
-    stopifnot(is.vector(tour))
-    stopifnot(is.integer(tour))
-    stopifnot(all(tour > 0))
-    stopifnot(length(tour) == length(unique(tour)))
-
-    if(!is.null(start_from_spot)) {
-        stopifnot(all(tour != start_from_spot))
-    }
-
-    if(!is.null(l_selected)) {
-        which_selected <- which(l_selected == 1L)
-        stopifnot(all(tour %in% which_selected))
-    }
-}
+source("lib/graph_aux.R")
 
 greedy_list_get_tour_len <- function(
     tour,

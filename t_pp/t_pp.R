@@ -3,6 +3,7 @@
 # t_pp.R
 #
 # Created: 2018-12-03
+# Updated: 2018-12-05
 #  Author: Charles Zhu
 #
 # test script for mTSP solutions
@@ -22,6 +23,10 @@ opt_list = list(
         c("--max_cost_worker"),
         action = "store", default = +Inf, type = "numeric",
         help = "Maximum cost per worker, default = %default"),
+    make_option(
+        c("--spot_cali_cost"),
+        action = "store", default = 0L, type = "integer",
+        help = "Calibration cost at any spot, default = %default"),
     make_option(
         c("--path_planner"),
         action = "store", default = NA, type = "character",
@@ -54,6 +59,7 @@ if(is.na(opt$distance_file)) {
 }
 
 stopifnot(opt$max_cost_worker >= 0)
+stopifnot(opt$spot_cali_cost >= 0)
 
 PATH_PLANNERS <- c("each", "ga_1", "ga_grd_1", "greedy_1", "ompr_glpk", "ompr_gurobi")
 lockBinding("PATH_PLANNERS", globalenv())
@@ -91,9 +97,11 @@ if(fo_flag) {
     cat(
         "path_planner",
         "num_spots",
+        "max_cost_worker",
+        "spot_cali_cost",
         "solver_time",
         "num_workers",
-        "total_cost",
+        "total_move_dist",
         sep = ", "
     )
     if(!is.na(opt$additional_field)) {
@@ -106,22 +114,29 @@ load(opt$distance_file)
 if(fo_flag) {
     cat("Path planner:", opt$path_planner, "\n")
     cat(sprintf("Number of spots: %d\n", NUM_SPOTS))
+    cat("Maximum cost per worker:", opt$max_cost_worker, "\n")
+    cat("Calibration cost at any spot:", opt$spot_cali_cost, "\n")
 } else {
     cat(
         opt$path_planner,
         NUM_SPOTS,
+        opt$max_cost_worker,
+        opt$spot_cali_cost,
         "",
         sep = ", "
     )
 }
 
+l_selected <- c(0L, rep(1L, NUM_SPOTS - 1L))
+spot_cali_cost <- rep(opt$spot_cali_cost, NUM_SPOTS)
+
 if(fo_flag) { cat("Solving...\n") }
 solver_time = system.time(
     paths_array <- pp_f(
-        l_selected      = c(0L, rep(1L, NUM_SPOTS - 1L)),
+        l_selected      = l_selected,
         distance_matrix = map_graph_distances,
         max_cost_worker = opt$max_cost_worker,
-        spot_cali_cost  = rep(0, NUM_SPOTS),
+        spot_cali_cost  = spot_cali_cost,
         paranoid        = opt$paranoid
     )
 )
@@ -150,6 +165,7 @@ if(opt$paranoid) {
     )
 }
 
+tour_list <- NULL
 if(is.null(paths_array)) {
     num_workers <- 0
     if(fo_flag) {
@@ -158,45 +174,68 @@ if(is.null(paths_array)) {
 } else {
     num_workers <- dim(paths_array)[3]
     if(fo_flag) {
-        sparse_rep <- data.frame(
-            which(paths_array > 0, arr.ind = TRUE),
-            row.names = NULL
+        # sparse_rep <- data.frame(
+        #     which(paths_array > 0, arr.ind = TRUE),
+        #     row.names = NULL
+        # )
+        # colnames(sparse_rep) <- c("from", "to", "worker")
+        # sparse_rep <- sparse_rep[with(sparse_rep, order(worker, from)), ]
+        # rownames(sparse_rep) <- NULL
+        # print(sparse_rep)
+
+        tour_list <- paths_array_to_tour_list(
+            paths_array     = paths_array,
+            start_from_spot = 1L,
+            paranoid        = opt$paranoid
         )
-        colnames(sparse_rep) <- c("from", "to", "worker")
-        sparse_rep <- sparse_rep[with(sparse_rep, order(worker, from)), ]
-        rownames(sparse_rep) <- NULL
-        print(sparse_rep)
+        for(worker in 1L:num_workers) {
+            cat(sprintf("%8s", sprintf("[%d]", worker)), "")
+            cat(c(1L, tour_list[[worker]], 1L), sep = " -> ")
+            cat("\n")
+        }
     }
 }
 
 # use my implementation to compute cost per worker and total cost
 # should be consistent with the objective value if no cali cost is introduced
-cost_worker <- NULL
-total_cost <- 0
+move_dist_worker <- NULL
+cali_cost_worker <- NULL
+total_move_dist <- 0
+
 if(!is.null(paths_array)) {
-    cost_worker <- get_move_dist_per_worker(
+    if(opt$paranoid) {
+        stopifnot(is.list(tour_list))
+    }
+
+    move_dist_worker <- get_move_dist_per_worker(
         distance_matrix = map_graph_distances,
         paths_array     = paths_array,
         paranoid        = opt$paranoid
     )
-    total_cost <- sum(cost_worker)
-
-    # this is true only if no cali cost is introduced
-    # manually check this in full output
-    #
-    # if(opt$paranoid) {
-    #     stopifnot(total_cost == res_value)
-    # }
+    cali_cost_worker <- unlist(
+        lapply(
+            tour_list,
+            function(tour) {
+                sum(spot_cali_cost[tour])
+            }
+        )
+    )
+    total_move_dist <- sum(move_dist_worker)
 }
 
 if(fo_flag) {
     cat(sprintf("Workers involved: %d\n", num_workers))
-    cat("Cost of each worker:", paste(cost_worker, collapse = ", "), "\n")
-    cat("Total cost:", sum(cost_worker), "\n")
+    cat("Move cost per worker:",
+        paste(move_dist_worker, collapse = ", "), "\n")
+    cat("Cali cost per worker:",
+        paste(cali_cost_worker, collapse = ", "), "\n")
+    cat("Total cost per worker:",
+        paste(move_dist_worker + cali_cost_worker, collapse = ", "), "\n")
+    cat("Total movement cost:", total_move_dist, "\n")
 } else {
     cat(
         num_workers,
-        total_cost,
+        total_move_dist,
         sep = ", "
     )
 
