@@ -46,7 +46,8 @@ if [ $? -ne 0 ]; then exit $?; fi
 t_pp/t_pp.R \
 --distance_file=${distance_fn} \
 --path_planner=${path_planner} \
---max_cost_worker=1200 \
+--max_cost_worker=3600 \
+--spot_cali_cost=300 \
 --additional_field="case_graph_id" \
 --additional_value="${case_graph}" | tail -n ${tail_lines} | tee -a "${output_file}"
 if [ $? -ne 0 ]; then exit $?; fi
