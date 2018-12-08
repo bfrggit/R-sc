@@ -164,10 +164,11 @@ sel_f <- get(paste(c("sel_f", opt$selector), collapse = "_"))
 
 # load specified path planner
 source(sprintf("solution/pp_%s.R", opt$path_planner))
-if(opt$path_planner == "each") {
-    pp_f <- get_multi_paths_each
-}
-stopifnot(exists("pp_f"))
+# if(opt$path_planner == "each") {
+#     pp_f <- get_multi_paths_each
+# }
+# stopifnot(exists("pp_f"))
+pp_f <- get(sprintf("get_multi_paths_%s", opt$path_planner))
 
 # generate initial TTNC matrix
 # in this test, all sensors are initially new
