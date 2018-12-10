@@ -3,7 +3,7 @@
 # simu.R
 #
 # Created: 2018-10-05
-# Updated: 2018-10-08
+# Updated: 2018-12-09
 #  Author: Charles Zhu
 #
 # derived from simu_no_move.R
@@ -103,7 +103,7 @@ print_selectors <- function() {
     cat("\n\n")
 }
 
-PATH_PLANNERS <- c("each")
+PATH_PLANNERS <- c("each", "ga_grd_1")
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {
@@ -164,10 +164,11 @@ sel_f <- get(paste(c("sel_f", opt$selector), collapse = "_"))
 
 # load specified path planner
 source(sprintf("solution/pp_%s.R", opt$path_planner))
-if(opt$path_planner == "each") {
-    pp_f <- get_multi_paths_each
-}
-stopifnot(exists("pp_f"))
+# if(opt$path_planner == "each") {
+#     pp_f <- get_multi_paths_each
+# }
+# stopifnot(exists("pp_f"))
+pp_f <- get(sprintf("get_multi_paths_%s", opt$path_planner))
 
 # generate initial TTNC matrix
 # in this test, all sensors are initially new
