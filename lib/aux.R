@@ -36,7 +36,7 @@ if(!exists("EX_AUX_R")) {
 #     ) # RETURN
 # }
 
-get_cali_time <<- function(
+get_spot_cali_time <<- function(
     st_cali_t,              # sensor type calibration time/cost
     s_selected,             # selected sensors
     n_location,             # node location matrix, needed for multi-party
@@ -57,19 +57,23 @@ get_cali_time <<- function(
         stopifnot(all(n_location == 0L | n_location == 1L))
     }
 
-    sum(
-        apply(
-            t(n_location) %*% diag(
-                apply(
-                    s_selected %*% diag(st_cali_t), # per-sensor time, N by K
-                    MARGIN = 1L,
-                    FUN = max
-                ) # per-node time, N by 1
-            ), # per-spot-node time, L by N
-            MARGIN = 1L,
-            FUN = max
-        ) # per-spot calibration time
-    ) # RETURN
+    apply(
+        t(n_location) %*% diag(
+            apply(
+                s_selected %*% diag(st_cali_t), # per-sensor time, N by K
+                MARGIN = 1L,
+                FUN = max
+            ) # per-node time, N by 1
+        ), # per-spot-node time, L by N
+        MARGIN = 1L,
+        FUN = max
+    ) # RETURN, per-spot calibration time
+}
+
+get_cali_time <<- function(
+    ...
+) {
+    sum(get_spot_cali_time(...)) # RETURN
 }
 
 get_post_ttnc <<- function(

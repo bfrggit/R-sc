@@ -46,6 +46,10 @@ opt_list = list(
         action = "store", default = NA, type = "character",
         help = "Path planner name"),
     make_option(
+        c("--max_cost_worker"),
+        action = "store", default = +Inf, type = "numeric",
+        help = "Maximum cost per worker, default = %default"),
+    make_option(
         c("-x", "--weight_overhead"),
         action = "store", default = 1e+4, type = "numeric",
         help = "Weight of iteration overhead, default = %default"),
@@ -65,6 +69,14 @@ opt_list = list(
         c("--paranoid"),
         action = "store_true", default = FALSE, type = "logical",
         help = "Enable paranoid mode, default = %default"),
+    make_option(
+        c("--paranoid_path_planner"),
+        action = "store_true", default = FALSE, type = "logical",
+        help = "Enable paranoid mode for path planner, default = %default"),
+    make_option(
+        c("-v", "--verbose"),
+        action = "store_true", default = FALSE, type = "logical",
+        help = "Enable verbose output, default = %default"),
     make_option(
         c("--additional_field"),
         action = "store", default = NA, type = "character",
@@ -132,6 +144,8 @@ if(!opt$path_planner %in% PATH_PLANNERS) {
     stop(sprintf("Unsupported path planner name: %s", opt$path_planner))
 }
 
+stopifnot(opt$max_cost_worker >= 0)
+
 if(!is.na(opt$output_file)){
     stopifnot(!file.exists(opt$output_file))
     stopifnot(file.create(opt$output_file))
@@ -185,6 +199,7 @@ ttnc_init <- ifelse(
 cat(
     "selector",
     "num_iters",
+    "max_cost_worker",
     "interval_mean",
     "cali_t_per_iter",
     "move_d_per_iter",
@@ -222,7 +237,10 @@ res_case <- run(
     num_iters   = num_iters,
     selector_f  = sel_f,
     path_plan_f = pp_f,
-    paranoid    = opt$paranoid
+    max_cost_worker = opt$max_cost_worker,
+    paranoid    = opt$paranoid,
+    pp_paranoid = opt$paranoid_path_planner,
+    verbose     = opt$verbose
 )
 
 # compute simulation metrics
@@ -248,6 +266,7 @@ weighted_sum <-
 cat(
     opt$selector,
     num_iters,
+    opt$max_cost_worker,
     interval_mean,
     cali_t_per_iter,
     move_d_per_iter,
@@ -275,4 +294,50 @@ cat("\n")
 # save to file
 if(!is.na(opt$output_file)){
     save.image(file = opt$output_file)
+}
+
+# non-reachable section
+# used for manual tests
+if(FALSE) {
+
+rm(list = ls())
+load("prep_types_RData/types_10_1.RData")
+load("prep_location_v_nodes_RData/location_100_1.RData")
+load("prep_presence_v_prob_RData/presence_100_5_1.RData")
+load("prep_graph_v_edges_RData/graph_300_4.RData")
+
+source("lib/basic.R")
+source("lib/naive_sel.R")
+source("lib/run.R")
+source("solution/pp_ga_grd_1.R")
+
+num_iters <- 10L
+pp_f <- get_multi_paths_ga_grd_1
+sel_f <- sel_f_minimal
+ttnc_init <- ifelse(
+    presence,
+    yes = matrix(
+        rep(st_specs$st_period, NUM_NODES),
+        nrow = NUM_NODES,
+        byrow = TRUE
+    ),
+    no = Inf
+)
+
+res_case <- run(
+    st_period   = st_specs$st_period,
+    st_cali_t   = st_specs$st_cali_t,
+    n_location  = location_matrix,
+    s_presence  = presence,
+    distance_matrix = map_graph_distances,
+    ttnc_init   = ttnc_init,
+    num_iters   = num_iters,
+    selector_f  = sel_f,
+    path_plan_f = pp_f,
+    max_cost_worker = +Inf,
+    paranoid    = TRUE,
+    pp_paranoid = FALSE,
+    verbose     = TRUE
+)
+
 }

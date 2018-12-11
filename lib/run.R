@@ -23,7 +23,10 @@ run <<- function(
     num_iters,          # number of iterations as stop condition for simulation
     selector_f,         # selector function
     path_plan_f,        # path planner function
-    paranoid = TRUE     # enable/disable paranoid checks
+    max_cost_worker = +Inf, # constraint
+    paranoid = TRUE,        # enable/disable paranoid checks
+    pp_paranoid = FALSE,    # enable/disable paranoid for path planner
+    verbose = FALSE         # enable/disable verbose output for debugging
 ) {
     # in this simulation,
     # metrics are returned in raw values that are not yet normalized
@@ -62,6 +65,15 @@ run <<- function(
 
         stopifnot(is.function(selector_f))
         stopifnot(is.function(path_plan_f))
+
+        stopifnot(is.numeric(max_cost_worker))
+        stopifnot(length(max_cost_worker) == 1L)
+        stopifnot(max_cost_worker > 0)
+    }
+
+    if(verbose) {
+        cat("---\n")
+        cat("Simulation started.\n")
     }
 
     # prepare for simulation and initialize stat recorder
@@ -77,6 +89,10 @@ run <<- function(
 
     ttnc <- ttnc_init - min(ttnc_init)
     for(it in 1L:num_iters) {
+        if(verbose) {
+            cat(sprintf("Iteration %d:", it), "")
+        }
+
         # call the sensor selection solver
         selected_sensors <- selector_f(
             ttnc_before = ttnc
@@ -91,23 +107,37 @@ run <<- function(
             stopifnot(all(selected_sensors == 1L | ttnc > 0))
         }
 
-        # calibration cost
-        cali_cost[it] <- get_cali_time(
-            st_cali_t   = st_cali_t,
-            s_selected  = selected_sensors,
-            n_location  = n_location,
-            paranoid    = paranoid
-        )
-
-        # preprocess for calculating movement cost
+        # find selected spots
         selected_spots <- get_selected_spots_from_selected_sensors(
             s_selected  = selected_sensors,
             n_location  = n_location,
             paranoid    = paranoid
         )
-        paths_array <- path_plan_f(
-            l_selected  = selected_spots,
+
+        if(verbose) {
+            cat(
+                sprintf("Selected %d sensor(s)", sum(selected_sensors)),
+                sprintf("at %d spot(s)...", sum(selected_spots)),
+                ""
+            )
+        }
+
+        # calibration cost
+        spot_cali_cost <- get_spot_cali_time(
+            st_cali_t   = st_cali_t,
+            s_selected  = selected_sensors,
+            n_location  = n_location,
             paranoid    = paranoid
+        )
+        cali_cost[it] <- sum(spot_cali_cost)
+
+        # preprocess for calculating movement cost
+        paths_array <- path_plan_f(
+            l_selected      = selected_spots,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            paranoid        = pp_paranoid # paranoid
         )
 
         if(paranoid) {
@@ -118,6 +148,10 @@ run <<- function(
                     paranoid = paranoid
                 )
             )
+        }
+
+        if(verbose) {
+            cat("mTSP done.\n")
         }
 
         # movement cost
@@ -143,6 +177,11 @@ run <<- function(
         )
         intervals[it] <- ttni <- min(ttnc_after)
         ttnc <- ttnc_after - ttni
+    }
+
+    if(verbose) {
+        cat("Simulation complete.\n")
+        cat("---\n")
     }
 
     res <- list()
