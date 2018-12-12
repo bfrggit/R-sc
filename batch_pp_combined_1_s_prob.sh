@@ -68,7 +68,7 @@ simu/simu.R \
 --presence_file=${presence_fn} \
 --distance_file=${distance_fn} \
 --selector=${selector} \
---path_planner=ga_grd_1 \
+--path_planner=combined_1 \
 --additional_field="num_nodes, prob, num_edges, case_types_id, case_location_id, case_presence_id, case_graph_id" \
 --additional_value="${NUM_NODES}, ${prob}, ${NUM_EDGES}, ${case_types}, ${case_location}, ${case_presence}, ${CASE_GRAPH}" | tail -n ${tail_lines} | tee -a "${output_file}"
 if [ $? -ne 0 ]; then exit $?; fi
