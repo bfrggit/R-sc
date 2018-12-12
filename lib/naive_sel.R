@@ -72,6 +72,11 @@ get_sel_f_local <- function(n_location, s_presence) {
     stopifnot(nrow(n_location) == NUM_NODES)
     stopifnot(all(n_location == 0L | n_location == 1L))
 
+    stopifnot(is.integer(s_presence) && is.matrix(s_presence))
+    stopifnot(ncol(s_presence) == NUM_TYPES)
+    stopifnot(nrow(s_presence) == NUM_NODES)
+    stopifnot(all(s_presence == 0L | s_presence == 1L))
+
     function(
         ttnc_before,
         paranoid = TRUE
