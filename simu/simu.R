@@ -173,7 +173,8 @@ load(opt$distance_file)
 sel_f_all <- get_sel_f_all(s_presence = presence)
 sel_f_nodal <- get_sel_f_nodal(s_presence = presence)
 sel_f_local <- get_sel_f_local(
-    n_location = location_matrix,s_presence = presence)
+    n_location = location_matrix,
+    s_presence = presence)
 sel_f <- get(paste(c("sel_f", opt$selector), collapse = "_"))
 
 # load specified path planner
