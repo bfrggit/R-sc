@@ -173,7 +173,7 @@ ga_get_multi_cali_sum <- function(
     for(tnd in 1L:num_selected) {
         if(chromosome[num_selected + tnd] > 0) {
             cali_sum[tnd] <- sum(
-                spot_cali_cost[tour_begin[tnd]:tour_end[tnd]]
+                spot_cali_cost[chromosome[tour_begin[tnd]:tour_end[tnd]]]
             )
         }
     }
