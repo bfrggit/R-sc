@@ -3,7 +3,7 @@
 # t_pp.R
 #
 # Created: 2018-12-03
-# Updated: 2018-12-05
+# Updated: 2018-12-11
 #  Author: Charles Zhu
 #
 # test script for mTSP solutions
@@ -61,7 +61,15 @@ if(is.na(opt$distance_file)) {
 stopifnot(opt$max_cost_worker >= 0)
 stopifnot(opt$spot_cali_cost >= 0)
 
-PATH_PLANNERS <- c("each", "ga_1", "ga_grd_1", "greedy_1", "ompr_glpk", "ompr_gurobi")
+PATH_PLANNERS <- c(
+    "combined_1",
+    "each",
+    "ga_1",
+    "ga_grd_1",
+    "greedy_1",
+    "ompr_glpk",
+    "ompr_gurobi"
+)
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {
@@ -128,7 +136,7 @@ if(fo_flag) {
 }
 
 l_selected <- c(0L, rep(1L, NUM_SPOTS - 1L))
-spot_cali_cost <- rep(opt$spot_cali_cost, NUM_SPOTS)
+spot_cali_cost <- c(0L, rep(opt$spot_cali_cost, NUM_SPOTS - 1L))
 
 if(fo_flag) { cat("Solving...\n") }
 solver_time = system.time(

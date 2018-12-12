@@ -31,7 +31,7 @@ run <<- function(
     # in this simulation,
     # metrics are returned in raw values that are not yet normalized
 
-    if(paranoid) {
+    if(TRUE) { # if(paranoid) {
         stopifnot(is.integer(st_period))
         stopifnot(length(st_period) == NUM_TYPES)
 
@@ -42,6 +42,7 @@ run <<- function(
         stopifnot(ncol(n_location) == NUM_SPOTS_POPULATED)
         stopifnot(nrow(n_location) == NUM_NODES)
         stopifnot(all(n_location == 0L | n_location == 1L))
+        stopifnot(all(n_location[, 1L]) == 0L) # no node at depot
 
         stopifnot(is.integer(s_presence) && is.matrix(s_presence))
         stopifnot(ncol(s_presence) == NUM_TYPES)
@@ -130,6 +131,10 @@ run <<- function(
             paranoid    = paranoid
         )
         cali_cost[it] <- sum(spot_cali_cost)
+
+        if(paranoid) {
+            stopifnot(spot_cali_cost[1L] == 0)
+        }
 
         # preprocess for calculating movement cost
         paths_array <- path_plan_f(

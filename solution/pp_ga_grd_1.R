@@ -217,6 +217,8 @@ get_fitness_f_ga_1 <- function(
             start_from_spot     = start_from_spot,
             paranoid            = paranoid
         )
+        fitness <- 0 - sum(tour_sum)
+
         cali_sum <- rep(0, num_selected)
         if(is.finite(max_cost_worker)) {
             cali_sum <- ga_get_multi_cali_sum(
@@ -227,17 +229,12 @@ get_fitness_f_ga_1 <- function(
                 spot_cali_cost  = spot_cali_cost,
                 paranoid        = paranoid
             )
+            constraint_met <- (tour_sum + cali_sum <= max_cost_worker)
+            fitness <- fitness - 1000000 * sum(!constraint_met)
         }
 
-        # check if any individual cost violates max cost per worker constraint
-        # if(any(tour_sum + cali_sum > max_cost_worker)) {
-        #     return(-Inf)
-        # }
-        # will not do this check
-        # will adjust solutions in a separate func instead
-
         # fitness value
-        -sum(tour_sum) # RETURN
+        fitness # RETURN
     } # RETURN
 }
 
@@ -1061,11 +1058,11 @@ if(FALSE) {
 rm(list = ls())
 load("t_pp/prep_RData/graph_60_4.RData")
 
-paths_array <- get_multi_paths_ga_1(
+paths_array <- get_multi_paths_ga_grd_1(
   l_selected = c(0L, rep(1L, NUM_SPOTS - 1L)),
   distance_matrix = map_graph_distances,
-  max_cost_worker = 1200,
-  spot_cali_cost = rep(0L, NUM_SPOTS),
+  max_cost_worker = 3600,
+  spot_cali_cost = c(0L, rep(300L, NUM_SPOTS - 1L)),
   ga_seed = 9L,
   paranoid = FALSE
 )

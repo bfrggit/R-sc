@@ -334,7 +334,7 @@ res_case <- run(
     num_iters   = num_iters,
     selector_f  = sel_f,
     path_plan_f = pp_f,
-    max_cost_worker = +Inf,
+    max_cost_worker = 3600,
     paranoid    = TRUE,
     pp_paranoid = FALSE,
     verbose     = TRUE
