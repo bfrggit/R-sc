@@ -7,10 +7,10 @@ CASE_GRAPH=4
 RE_NUMBER='^[0-9]+$'
 
 print_usage() {
-    echo >&2 "Usage: $0 PROB PROJ_ROOT OUTPUT_FILE"
+    echo >&2 "Usage: $0 PROB SELECTOR CASE_TYPES CASE_LOC PROJ_ROOT OUTPUT_FILE"
 }
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 6 ]; then
     print_usage
     echo >&2
     echo >&2 "Illegal number of parameters"
@@ -25,11 +25,29 @@ if [[ ! ${prob} =~ ${RE_NUMBER} ]]; then
     exit 1
 fi
 
-proj_root=$(realpath "$2")
+selector="$2"
+
+case_types="$3"
+if [[ ! ${case_types} =~ ${RE_NUMBER} ]]; then
+    print_usage
+    echo >&2
+    echo >&2 "CASE_TYPES must be an integer"
+    exit 1
+fi
+
+case_location="$4"
+if [[ ! ${case_location} =~ ${RE_NUMBER} ]]; then
+    print_usage
+    echo >&2
+    echo >&2 "CASE_LOC must be an integer"
+    exit 1
+fi
+
+proj_root=$(realpath "$5")
 if [ $? -ne 0 ]; then exit $?; fi
 cd ${proj_root}
 
-output_file=$(realpath -m "$3")
+output_file=$(realpath -m "$6")
 if [ $? -ne 0 ]; then exit $?; fi
 
 if type module >/dev/null 2>&1; then
@@ -41,21 +59,20 @@ touch ${output_file}
 if [ $? -ne 0 ]; then exit $?; fi
 
 distance_fn=$(realpath "prep_graph_v_edges_RData/graph_${NUM_EDGES}_${CASE_GRAPH}.RData")
-tail_lines=2
+if [ $? -ne 0 ]; then exit $?; fi
 
-for case_types in `seq 1 1 2`; do
 sensor_fn=$(realpath "prep_types_RData/types_${NUM_TYPES}_${case_types}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
-for case_location in `seq 1 1 2`; do
 location_fn=$(realpath "prep_location_v_nodes_RData/location_${NUM_NODES}_${case_location}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
+
+tail_lines=2
 
 for case_presence in `seq 1 1 5`; do
 presence_fn=$(realpath "prep_presence_v_prob_RData/presence_${NUM_NODES}_${prob}_${case_presence}.RData")
 if [ $? -ne 0 ]; then exit $?; fi
 
-for selector in "minimal" "all" "nodal" "local"; do
 simu/simu.R \
 --paranoid \
 -W 100 \
@@ -75,7 +92,4 @@ simu/simu.R \
 if [ $? -ne 0 ]; then exit $?; fi
 tail_lines=1
 
-done
-done
-done
 done

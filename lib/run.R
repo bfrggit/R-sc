@@ -82,10 +82,14 @@ run <<- function(
     move_cost <- rep(NaN, num_iters)
     intervals <- rep(NaN, num_iters)
     num_paths <- rep(NaN, num_iters)
+    selc_time <- rep(NaN, num_iters)
+    path_time <- rep(NaN, num_iters)
     names(cali_cost) <-
         names(move_cost) <-
         names(intervals) <-
         names(num_paths) <-
+        names(selc_time) <-
+        names(path_time) <-
         z_nd_str("iter", num_iters)
 
     ttnc <- ttnc_init - min(ttnc_init)
@@ -95,9 +99,11 @@ run <<- function(
         }
 
         # call the sensor selection solver
-        selected_sensors <- selector_f(
-            ttnc_before = ttnc
-        )
+        selc_time[it] <- system.time(
+            selected_sensors <- selector_f(
+                ttnc_before = ttnc
+            )
+        )[3]
 
         if(paranoid) {
             stopifnot(is.integer(selected_sensors)
@@ -137,13 +143,15 @@ run <<- function(
         }
 
         # preprocess for calculating movement cost
-        paths_array <- path_plan_f(
-            l_selected      = selected_spots,
-            distance_matrix = distance_matrix,
-            max_cost_worker = max_cost_worker,
-            spot_cali_cost  = spot_cali_cost,
-            paranoid        = pp_paranoid # paranoid
-        )
+        path_time[it] <- system.time(
+            paths_array <- path_plan_f(
+                l_selected      = selected_spots,
+                distance_matrix = distance_matrix,
+                max_cost_worker = max_cost_worker,
+                spot_cali_cost  = spot_cali_cost,
+                paranoid        = pp_paranoid # paranoid
+            )
+        )[3]
 
         if(paranoid) {
             stopifnot(
@@ -198,6 +206,8 @@ run <<- function(
     res$move_cost <- move_cost
     res$intervals <- intervals
     res$num_paths <- num_paths
+    res$selc_time <- selc_time
+    res$path_time <- path_time
     res # RETURN
 }
 

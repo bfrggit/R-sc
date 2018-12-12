@@ -217,6 +217,8 @@ cat(
     "weighted_move",
     "weighted_worker",
     "weighted_sum",
+    "sl_time_per_iter",
+    "pp_time_per_iter",
     sep = ", "
 )
 if(!is.na(opt$additional_field)) {
@@ -261,6 +263,8 @@ weighted_sum <-
     weighted_cali +
     weighted_move +
     weighted_worker
+sl_time_per_iter <- mean(res_case$selc_time)
+pp_time_per_iter <- mean(res_case$path_time)
 
 # print results
 cat(
@@ -284,6 +288,8 @@ cat(
     weighted_move,
     weighted_worker,
     weighted_sum,
+    sl_time_per_iter,
+    pp_time_per_iter,
     sep = ", "
 )
 if(!is.na(opt$additional_value)) {
