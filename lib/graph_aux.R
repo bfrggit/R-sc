@@ -1,7 +1,7 @@
 # graph_aux.R
 #
 # Created: 2018-10-04
-# Updated: 2018-12-05
+# Updated: 2018-12-11
 #  Author: Charles Zhu
 #
 if(!exists("EX_GRAPH_AUX_R")) {
@@ -98,6 +98,7 @@ is_valid_single_path_matrix <<- function(
 
 is_valid_multi_paths_array <<- function(
     paths_array,                    # three-dimensional, L by L by num_workers
+    l_selected = NULL,              # for solution checking
     must_start_from_spot = 1L,      # int as node index
     allow_zero = TRUE,              # if a zero matrix is considered valid
     paranoid = TRUE
@@ -110,6 +111,13 @@ is_valid_multi_paths_array <<- function(
         stopifnot(dim(paths_array)[2] == NUM_SPOTS)
         stopifnot(dim(paths_array)[3] > 0L)
         stopifnot(all(paths_array) >= 0L)
+
+        if(!is.null(l_selected)) {
+            stopifnot(is.vector(l_selected))
+            stopifnot(is.integer(l_selected))
+            stopifnot(length(l_selected) == NUM_SPOTS)
+            stopifnot(all(l_selected == 0L | l_selected == 1L))
+        }
 
         stopifnot(is.integer(must_start_from_spot))
         stopifnot(length(must_start_from_spot) == 1L)
@@ -131,6 +139,15 @@ is_valid_multi_paths_array <<- function(
     num_in_edges <- apply(paths_array, MARGIN = 2L, FUN = sum)
     if(any(num_out_edges != num_in_edges)) { return(FALSE) }
     if(sum(num_out_edges > 1L) > 1) { return(FALSE) }
+    if(!is.null(l_selected)) {
+        if(
+            any(
+                (   (num_out_edges > 0) !=
+                    (l_selected > 0)
+                )[-must_start_from_spot]
+            )
+        ) { return (FALSE) }
+    }
     if(num_out_edges[must_start_from_spot] != num_workers) { return(FALSE) }
     TRUE # RETURN
 }

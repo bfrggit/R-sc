@@ -3,7 +3,7 @@
 # simu.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-09
+# Updated: 2018-12-11
 #  Author: Charles Zhu
 #
 # derived from simu_no_move.R
@@ -115,7 +115,7 @@ print_selectors <- function() {
     cat("\n\n")
 }
 
-PATH_PLANNERS <- c("each", "ga_grd_1")
+PATH_PLANNERS <- c("combined_1", "ga_grd_1")
 lockBinding("PATH_PLANNERS", globalenv())
 
 print_path_planners <- function() {
@@ -309,11 +309,11 @@ load("prep_graph_v_edges_RData/graph_300_4.RData")
 source("lib/basic.R")
 source("lib/naive_sel.R")
 source("lib/run.R")
-source("solution/pp_ga_grd_1.R")
+source("solution/pp_combined_1.R")
 
 num_iters <- 10L
-pp_f <- get_multi_paths_ga_grd_1
 sel_f <- sel_f_minimal
+pp_f <- get_multi_paths_combined_1
 ttnc_init <- ifelse(
     presence,
     yes = matrix(

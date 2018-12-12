@@ -1,7 +1,7 @@
 # aux.R
 #
 # Created: 2018-06-07
-# Updated: 2018-08-05
+# Updated: 2018-12-11
 #  Author: Charles Zhu
 #
 # auxiliary functions for the simulator

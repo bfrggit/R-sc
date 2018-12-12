@@ -1,7 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
-# Updated: 2018-10-08
+# Updated: 2018-12-11
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -90,7 +90,7 @@ run <<- function(
     ttnc <- ttnc_init - min(ttnc_init)
     for(it in 1L:num_iters) {
         if(verbose) {
-            cat(sprintf("Iteration %d:", it), "")
+            cat(sprintf("it = %d,", it), "")
         }
 
         # call the sensor selection solver
@@ -116,9 +116,9 @@ run <<- function(
 
         if(verbose) {
             cat(
-                sprintf("Selected %d sensor(s)", sum(selected_sensors)),
-                sprintf("at %d spot(s)...", sum(selected_spots)),
-                ""
+                sprintf("sel_sensors = %d,", sum(selected_sensors)),
+                sprintf("sel_spots = %d", sum(selected_spots)),
+                "->", ""
             )
         }
 
@@ -144,17 +144,14 @@ run <<- function(
             stopifnot(
                 is_valid_multi_paths_array(
                     paths_array = paths_array,
+                    l_selected = selected_spots,
                     must_start_from_spot = 1L,
                     paranoid = paranoid
                 )
             )
         }
 
-        if(verbose) {
-            cat("mTSP done.\n")
-        }
-
-        # movement cost
+                # movement cost
         move_cost_per_worker <- get_move_dist_per_worker(
             distance_matrix = distance_matrix,
             paths_array     = paths_array,
@@ -167,6 +164,13 @@ run <<- function(
         # )
         move_cost[it] <- sum(move_cost_per_worker)
         num_paths[it] <- sum(move_cost_per_worker > 0)
+
+        if(verbose) {
+            cat(
+                sprintf("move_cost = %d,", move_cost[it]),
+                sprintf("num_paths = %d\n", num_paths[it])
+            )
+        }
 
         # state transition
         ttnc_after <- get_post_ttnc(

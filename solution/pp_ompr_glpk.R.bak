@@ -1,7 +1,7 @@
 # pp_ompr_glpk.R
 #
 # Created: 2018-10-29
-# Updated: 2018-12-11
+# Updated: 2018-11-05
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -89,27 +89,24 @@ get_multi_paths_ompr_glpk <<- function(
         }
     }
 
-    which_selected <- which(l_selected > 0)
-    which_effective <- c(1L, which_selected)
-    num_selected <- length(which_selected)
-    num_spots_effective <- 1L + num_selected
-    distance_effective <- distance_matrix[which_effective, which_effective]
-    if(is.null(num_workers)) { num_workers <- num_selected }
+    if(is.null(num_workers)) {
+        num_workers <- length(which(l_selected > 0))
+    }
 
     # allow a salesman to stay at depot if we do not set exact num of workers
     same_city_constraint_applies_to <- switch(
         fix_workers + 1L,
         2L,
         1L
-    ):num_spots_effective
+    ):NUM_SPOTS
 
     model <- MIPModel() %>%
 
     # we create a variable that is 1 iff salesman k travels from city i to j
     add_variable(
         x[i, j, k],
-        i = 1L:num_spots_effective,
-        j = 1L:num_spots_effective,
+        i = 1L:NUM_SPOTS,
+        j = 1L:NUM_SPOTS,
         k = 1L:num_workers,
         type = "binary"
     ) %>%
@@ -117,18 +114,18 @@ get_multi_paths_ompr_glpk <<- function(
     # helper variable for the MTZ sub-tour constraints
     add_variable(
         u[i, k],
-        i = 1L:num_spots_effective,
+        i = 1L:NUM_SPOTS,
         k = 1L:num_workers,
         lb = 1,
-        ub = num_spots_effective
+        ub = NUM_SPOTS
     ) %>%
 
     # minimize travel distance and latest arrival
     set_objective(
         sum_expr(
-            distance_effective[i, j] * x[i, j, k],
-            i = 1L:num_spots_effective,
-            j = 1L:num_spots_effective,
+            distance_matrix[i, j] * x[i, j, k],
+            i = 1L:NUM_SPOTS,
+            j = 1L:NUM_SPOTS,
             k = 1L:num_workers
         ), "min"
     ) %>%
@@ -145,7 +142,7 @@ get_multi_paths_ompr_glpk <<- function(
     add_constraint(
         sum_expr(
             x[1L, j, k],
-            j = 1L:num_spots_effective # j = 2L:NUM_SPOTS
+            j = 1L:NUM_SPOTS # j = 2L:NUM_SPOTS
         ) == 1,
         k = 1L:num_workers,
         .show_progress_bar = FALSE
@@ -155,7 +152,7 @@ get_multi_paths_ompr_glpk <<- function(
     add_constraint(
         sum_expr(
             x[i, 1, k],
-            i = 1L:num_spots_effective # i = 2L:NUM_SPOTS
+            i = 1L:NUM_SPOTS # i = 2L:NUM_SPOTS
         ) == 1,
         k = 1L:num_workers,
         .show_progress_bar = FALSE
@@ -165,12 +162,12 @@ get_multi_paths_ompr_glpk <<- function(
     add_constraint(
         sum_expr(
             x[j, i, k],
-            j = 1L:num_spots_effective
+            j = 1L:NUM_SPOTS
         ) == sum_expr(
             x[i, j, k],
-            j = 1L:num_spots_effective
+            j = 1L:NUM_SPOTS
         ),
-        i = 2L:num_spots_effective,
+        i = 2L:NUM_SPOTS,
         k = 1L:num_workers,
         .show_progress_bar = FALSE
     ) %>%
@@ -179,25 +176,35 @@ get_multi_paths_ompr_glpk <<- function(
     add_constraint(
         sum_expr(
             x[i, j, k],
-            j = 1L:num_spots_effective,
+            j = 1L:NUM_SPOTS,
             k = 1L:num_workers
-        ) == 1,
-        i = 2L:num_spots_effective,
+        ) == l_selected[i], # 1,
+        i = 2L:NUM_SPOTS,
         .show_progress_bar = FALSE
     ) %>%
+
+    # arrive at each city with only one salesman
+    # add_constraint(
+    #     sum_expr(
+    #         x[i, j, k],
+    #         i = 1L:NUM_SPOTS,
+    #         k = 1L:num_workers
+    #     ) == 1,
+    #     j = 2L:NUM_SPOTS
+    # ) %>%
 
     # ensure no subtours (arc constraints)
     add_constraint(
         u[i, k] >= 2,
-        i = 2L:num_spots_effective,
+        i = 2L:NUM_SPOTS,
         k = 1L:num_workers,
         .show_progress_bar = FALSE
     ) %>%
 
     add_constraint(
-        u[i, k] - u[j, k] + 1 <= (num_spots_effective - 1) * (1 - x[i, j, k]),
-        i = 2L:num_spots_effective,
-        j = 2L:num_spots_effective,
+        u[i, k] - u[j, k] + 1 <= (NUM_SPOTS - 1) * (1 - x[i, j, k]),
+        i = 2L:NUM_SPOTS,
+        j = 2L:NUM_SPOTS,
         k = 1L:num_workers,
         .show_progress_bar = FALSE
     )
@@ -207,9 +214,9 @@ get_multi_paths_ompr_glpk <<- function(
         model <- add_constraint(
             .model = model,
             sum_expr(
-                x[i, j, k] * (distance_effective[i, j] + spot_cali_cost[j]),
-                i = 1L:num_spots_effective,
-                j = 1L:num_spots_effective
+                x[i, j, k] * (distance_matrix[i, j] + spot_cali_cost[j]),
+                i = 1L:NUM_SPOTS,
+                j = 1L:NUM_SPOTS
             ) <= max_cost_worker,
             k = 1L:num_workers,
             .show_progress_bar = FALSE
@@ -253,11 +260,8 @@ get_multi_paths_ompr_glpk <<- function(
     # fill in the array
     for(jnd in 1L:nrow(solution)) {
         worker_id <- worker_id_map[solution$k[jnd]]
-        paths_array[
-            which_effective[solution$i[jnd]],
-            which_effective[solution$j[jnd]],
-            worker_id
-        ] <- as.integer(solution$value[jnd] > 0)
+        paths_array[solution$i[jnd], solution$j[jnd], worker_id] <-
+            as.integer(solution$value[jnd] > 0)
     }
     paths_array # RETURN
 }
