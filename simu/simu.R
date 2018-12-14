@@ -114,7 +114,14 @@ if(is.na(opt$distance_file)) {
     stop("Must specify distance (graph) filename.")
 }
 
-SELECTORS <- c("minimal", "all", "nodal", "local")
+SELECTORS <- c(
+    "all",
+    "minimal",
+    "local",
+    "local_lim",
+    "nodal",
+    "nodal_lim"
+)
 lockBinding("SELECTORS", globalenv())
 
 print_selectors <- function() {
@@ -183,6 +190,7 @@ if(is.finite(opt$num_iters)) {
 
 source("lib/basic.R")
 source("lib/naive_sel.R")
+source("lib/naive_sel_lim.R")
 source("lib/run.R")
 
 load(opt$sensor_file)
