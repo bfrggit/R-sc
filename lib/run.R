@@ -45,6 +45,7 @@ run <<- function(
         stopifnot(nrow(n_location) == NUM_NODES)
         stopifnot(all(n_location == 0L | n_location == 1L))
         stopifnot(all(n_location[, 1L]) == 0L) # no node at depot
+        stopifnot(all(rowSums(n_location) == 1))
 
         stopifnot(is.integer(s_presence) && is.matrix(s_presence))
         stopifnot(ncol(s_presence) == NUM_TYPES)
@@ -122,6 +123,7 @@ run <<- function(
             stopifnot(ncol(selected_sensors) == NUM_TYPES)
             stopifnot(nrow(selected_sensors) == NUM_NODES)
             stopifnot(all(selected_sensors == 1L | selected_sensors == 0L))
+            stopifnot(all(selected_sensors <= s_presence))
             stopifnot(all(selected_sensors == 1L | ttnc > 0))
         }
 

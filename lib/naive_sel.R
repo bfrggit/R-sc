@@ -1,7 +1,7 @@
 # naive_sel.R
 #
 # Created: 2018-06-09
-# Updated: 2018-08-05
+# Updated: 2018-12-13
 #  Author: Charles Zhu
 #
 if(!exists("EX_NAIVE_SEL_R")) {
@@ -39,6 +39,22 @@ get_sel_f_all <- function(s_presence) {
     } # RETURN
 }
 
+naive_nodal_selection <- function(s_selected) {
+    apply(
+        s_selected,
+        MARGIN = 1L,
+        FUN = max
+    ) # RETURN, nodal selection, N by 1
+}
+
+naive_add_nodal <- function(s_presence, s_selected) {
+    apply(
+        diag(naive_nodal_selection(s_selected)) %*% s_presence,
+        MARGIN = c(1L, 2L),
+        FUN = as.integer
+    ) # RETURN
+}
+
 get_sel_f_nodal <- function(s_presence) {
     stopifnot(is.integer(s_presence) && is.matrix(s_presence))
     stopifnot(ncol(s_presence) == NUM_TYPES)
@@ -49,21 +65,32 @@ get_sel_f_nodal <- function(s_presence) {
         ttnc_before,
         paranoid = TRUE
     ) {
-        apply(
-            diag(
-                apply(
-                    sel_f_minimal(
-                        ttnc_before = ttnc_before,
-                        paranoid = paranoid
-                    ), # minimal selection matrix, N by K
-                    MARGIN = 1L,
-                    FUN = max
-                ) # nodal selection, N by 1
-            ) %*% s_presence,
-            MARGIN = c(1L, 2L),
-            FUN = as.integer
+        naive_add_nodal(
+            s_presence = s_presence,
+            s_selected = sel_f_minimal(
+                ttnc_before = ttnc_before,
+                paranoid = paranoid
+            )
         ) # RETURN
     } # RETURN
+}
+
+naive_add_local <- function(n_location, s_presence, s_selected) {
+    apply(
+        diag(
+            as.integer(
+                n_location %*% matrix(apply(
+                    t(n_location) %*% diag( # L by N
+                        naive_nodal_selection(s_selected)
+                    ), # per-spot-node selection, L by N
+                    MARGIN = 1L,
+                    FUN = max
+                ), ncol = 1L) # nodal selection, N by 1
+            )
+        ) %*% s_presence,
+        MARGIN = c(1L, 2L),
+        FUN = as.integer
+    ) # RETURN
 }
 
 get_sel_f_local <- function(n_location, s_presence) {
@@ -81,27 +108,13 @@ get_sel_f_local <- function(n_location, s_presence) {
         ttnc_before,
         paranoid = TRUE
     ) {
-        apply(
-            diag(
-                as.integer(
-                    n_location %*% matrix(apply(
-                        t(n_location) %*% diag( # L by N
-                            apply(
-                                sel_f_minimal(
-                                    ttnc_before = ttnc_before,
-                                    paranoid = paranoid
-                                ), # minimal selection matrix, N by K
-                                MARGIN = 1L,
-                                FUN = max
-                            ) # nodal selection, N by 1
-                        ), # per-spot-node selection, L by N
-                        MARGIN = 1L,
-                        FUN = max
-                    ), ncol = 1L) # nodal selection, N by 1
-                )
-            ) %*% s_presence,
-            MARGIN = c(1L, 2L),
-            FUN = as.integer
+        naive_add_local(
+            n_location = n_location,
+            s_presence = s_presence,
+            s_selected = sel_f_minimal(
+                ttnc_before = ttnc_before,
+                paranoid = paranoid
+            ) # minimal selection matrix, N by K
         ) # RETURN
     } # RETURN
 }
