@@ -3,7 +3,7 @@
 # simu.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-11
+# Updated: 2018-12-13
 #  Author: Charles Zhu
 #
 # derived from simu_no_move.R
@@ -19,8 +19,12 @@ opt_list = list(
         help = "Output filename, default = %default"),
     make_option(
         c("-W", "--num_iters"),
-        action = "store", default = 100L, type = "integer",
+        action = "store", default = NA, type = "numeric",
         help = "Number of iterations, default = %default"),
+    make_option(
+        c("--sum_intervals"),
+        action = "store", default = NA, type = "numeric",
+        help = "Total time period, default = %default"),
     make_option(
         c("--sensor_file"),
         action = "store", default = NA, type = "character",
@@ -45,6 +49,10 @@ opt_list = list(
         c("--path_planner"),
         action = "store", default = NA, type = "character",
         help = "Path planner name"),
+    make_option(
+        c("--no_multi_cali"), dest = "multi_cali",
+        action = "store_false", default = TRUE, type = "logical",
+        help = "Disable multi-party calibration"),
     make_option(
         c("--max_cost_worker"),
         action = "store", default = +Inf, type = "numeric",
@@ -150,7 +158,15 @@ if(!is.na(opt$output_file)){
     stopifnot(!file.exists(opt$output_file))
     stopifnot(file.create(opt$output_file))
 }
-stopifnot(opt$num_iters > 0L)
+stopifnot(is.na(opt$num_iters) || is.na(opt$sum_intervals))
+stopifnot(is.finite(opt$num_iters) || is.finite(opt$sum_intervals))
+if(is.finite(opt$num_iters)) {
+    stopifnot(opt$num_iters == as.integer(opt$num_iters))
+    stopifnot(opt$num_iters > 0)
+} else {
+    stopifnot(opt$sum_intervals == as.integer(opt$sum_intervals))
+    stopifnot(opt$sum_intervals > 0)
+}
 stopifnot(opt$weight_overhead >= 0)
 stopifnot(opt$weight_cali >= 0)
 stopifnot(opt$weight_move >= 0)
@@ -158,7 +174,12 @@ stopifnot(opt$weight_worker >= 0)
 stopifnot(
     is.na(opt$additional_field) == is.na(opt$additional_value))
 
-num_iters <- opt$num_iters
+num_iters <- sum_intervals <- NULL
+if(is.finite(opt$num_iters)) {
+    num_iters <- as.integer(opt$num_iters)
+} else {
+    sum_intervals <- as.integer(opt$sum_intervals)
+}
 
 source("lib/basic.R")
 source("lib/naive_sel.R")
@@ -199,7 +220,11 @@ ttnc_init <- ifelse(
 
 cat(
     "selector",
+    "multi_cali",
+    "lim_iters",
     "num_iters",
+    "lim_intervals",
+    "sum_intervals",
     "max_cost_worker",
     "interval_mean",
     "cali_t_per_iter",
@@ -231,27 +256,32 @@ cat("\n")
 # actual function call to run simulator
 #
 res_case <- run(
-    st_period   = st_specs$st_period,
-    st_cali_t   = st_specs$st_cali_t,
-    n_location  = location_matrix,
-    s_presence  = presence,
+    st_period       = st_specs$st_period,
+    st_cali_t       = st_specs$st_cali_t,
+    n_location      = location_matrix,
+    s_presence      = presence,
     distance_matrix = map_graph_distances,
-    ttnc_init   = ttnc_init,
-    num_iters   = num_iters,
-    selector_f  = sel_f,
-    path_plan_f = pp_f,
+    ttnc_init       = ttnc_init,
+    num_iters       = num_iters,
+    sum_intervals   = sum_intervals,
+    selector_f      = sel_f,
+    path_plan_f     = pp_f,
+    multi_cali      = opt$multi_cali,
     max_cost_worker = opt$max_cost_worker,
-    paranoid    = opt$paranoid,
-    pp_paranoid = opt$paranoid_path_planner,
-    verbose     = opt$verbose
+    paranoid        = opt$paranoid,
+    pp_paranoid     = opt$paranoid_path_planner,
+    verbose         = opt$verbose
 )
+
+stopifnot(length(res_case$intervals) == res_case$num_iters)
+stopifnot(sum(res_case$intervals) == res_case$sum_intervals)
 
 # compute simulation metrics
 interval_mean <- mean(res_case$intervals)
 cali_t_per_iter <- mean(res_case$cali_cost)
 move_d_per_iter <- mean(res_case$move_cost)
 n_path_per_iter <- mean(res_case$num_paths)
-overhead_average <- num_iters / sum(res_case$intervals)
+overhead_average <- res_case$num_iters / sum(res_case$intervals)
 cali_t_average <- sum(res_case$cali_cost) / sum(res_case$intervals)
 move_d_average <- sum(res_case$move_cost) / sum(res_case$intervals)
 n_path_average <- sum(res_case$num_paths) / sum(res_case$intervals)
@@ -270,7 +300,11 @@ pp_time_per_iter <- mean(res_case$path_time)
 # print results
 cat(
     opt$selector,
-    num_iters,
+    opt$multi_cali,
+    opt$num_iters,
+    res_case$num_iters,
+    opt$sum_intervals,
+    res_case$sum_intervals,
     opt$max_cost_worker,
     interval_mean,
     cali_t_per_iter,

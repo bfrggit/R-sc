@@ -1,7 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-11
+# Updated: 2018-12-13
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -21,8 +21,10 @@ run <<- function(
     distance_matrix,    # distance matrix calculated from the map graph
     ttnc_init,          # initial TTNC matrix
     num_iters,          # number of iterations as stop condition for simulation
+    sum_intervals,      # total time period as stop condition for simulation
     selector_f,         # selector function
     path_plan_f,        # path planner function
+    multi_cali = TRUE,      # enable/disable multi-party calibration
     max_cost_worker = +Inf, # constraint
     paranoid = TRUE,        # enable/disable paranoid checks
     pp_paranoid = FALSE,    # enable/disable paranoid for path planner
@@ -60,9 +62,16 @@ run <<- function(
         stopifnot(nrow(ttnc_init) == NUM_NODES)
         stopifnot(all(ttnc_init >= 0))
 
-        stopifnot(is.integer(num_iters))
-        stopifnot(length(num_iters) == 1L)
-        stopifnot(num_iters > 0L)
+        stopifnot(is.null(num_iters) || is.null(sum_intervals))
+        if(is.null(num_iters)) {
+            stopifnot(is.integer(sum_intervals))
+            stopifnot(length(sum_intervals) == 1L)
+            stopifnot(sum_intervals > 0L)
+        } else {
+            stopifnot(is.integer(num_iters))
+            stopifnot(length(num_iters) == 1L)
+            stopifnot(num_iters > 0L)
+        }
 
         stopifnot(is.function(selector_f))
         stopifnot(is.function(path_plan_f))
@@ -78,22 +87,24 @@ run <<- function(
     }
 
     # prepare for simulation and initialize stat recorder
-    cali_cost <- rep(NaN, num_iters)
-    move_cost <- rep(NaN, num_iters)
-    intervals <- rep(NaN, num_iters)
-    num_paths <- rep(NaN, num_iters)
-    selc_time <- rep(NaN, num_iters)
-    path_time <- rep(NaN, num_iters)
-    names(cali_cost) <-
-        names(move_cost) <-
-        names(intervals) <-
-        names(num_paths) <-
-        names(selc_time) <-
-        names(path_time) <-
-        z_nd_str("iter", num_iters)
+    cali_cost <- numeric()
+    move_cost <- numeric()
+    intervals <- numeric()
+    num_paths <- numeric()
+    selc_time <- numeric()
+    path_time <- numeric()
 
     ttnc <- ttnc_init - min(ttnc_init)
-    for(it in 1L:num_iters) {
+    it <- 0L
+    acc_intervals <- 0
+    while(is.integer(num_iters) &&
+        it < num_iters ||
+        is.integer(sum_intervals) &&
+        acc_intervals < sum_intervals
+    ) {
+        # count iterations
+        it <- it + 1L
+
         if(verbose) {
             cat(sprintf("it = %d,", it), "")
         }
@@ -134,6 +145,7 @@ run <<- function(
             st_cali_t   = st_cali_t,
             s_selected  = selected_sensors,
             n_location  = n_location,
+            multi_cali  = multi_cali,
             paranoid    = paranoid
         )
         cali_cost[it] <- sum(spot_cali_cost)
@@ -170,11 +182,6 @@ run <<- function(
             paths_array     = paths_array,
             paranoid        = paranoid
         )
-        # move_cost[it] <- get_move_dist(
-        #     distance_matrix = distance_matrix,
-        #     paths_array     = paths_array,
-        #     paranoid        = paranoid
-        # )
         move_cost[it] <- sum(move_cost_per_worker)
         num_paths[it] <- sum(move_cost_per_worker > 0)
 
@@ -194,6 +201,7 @@ run <<- function(
         )
         intervals[it] <- ttni <- min(ttnc_after)
         ttnc <- ttnc_after - ttni
+        acc_intervals <- acc_intervals + ttni
     }
 
     if(verbose) {
@@ -201,7 +209,17 @@ run <<- function(
         cat("---\n")
     }
 
+    names(cali_cost) <-
+        names(move_cost) <-
+        names(intervals) <-
+        names(num_paths) <-
+        names(selc_time) <-
+        names(path_time) <-
+        z_nd_str("iter", it)
+
     res <- list()
+    res$num_iters <- it
+    res$sum_intervals <- acc_intervals
     res$cali_cost <- cali_cost
     res$move_cost <- move_cost
     res$intervals <- intervals
