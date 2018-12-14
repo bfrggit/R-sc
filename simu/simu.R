@@ -191,12 +191,19 @@ load(opt$presence_file)
 load(opt$distance_file)
 
 # prepare selectors and choose the one given by options
-sel_f_all <- get_sel_f_all(s_presence = presence)
-sel_f_nodal <- get_sel_f_nodal(s_presence = presence)
-sel_f_local <- get_sel_f_local(
-    n_location = location_matrix,
-    s_presence = presence)
-sel_f <- get(paste(c("sel_f", opt$selector), collapse = "_"))
+if(!exists(sprintf("get_sel_f_%s", opt$selector))) {
+    source(sprintf("solution/sel_%s.R", opt$selector))
+}
+get_sel_f <- get(sprintf("get_sel_f_%s", opt$selector))
+stopifnot(is.function(get_sel_f))
+
+sel_f <- get_sel_f(
+    st_cali_t   = st_specs$st_cali_t,
+    n_location  = location_matrix,
+    s_presence  = presence,
+    multi_cali  = opt$multi_cali
+)
+stopifnot(is.function(sel_f))
 
 # load specified path planner
 source(sprintf("solution/pp_%s.R", opt$path_planner))

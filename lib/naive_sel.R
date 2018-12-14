@@ -7,25 +7,31 @@
 if(!exists("EX_NAIVE_SEL_R")) {
     EX_NAIVE_SEL_R <<- TRUE
 
-sel_f_minimal <- function(
-    ttnc_before,
-    paranoid = TRUE
-) {
-    if(paranoid) {
-        stopifnot(is.numeric(ttnc_before) && is.matrix(ttnc_before))
-        stopifnot(ncol(ttnc_before) == NUM_TYPES)
-        stopifnot(nrow(ttnc_before) == NUM_NODES)
-        stopifnot(all(ttnc_before >= 0))
-    }
+get_sel_f_minimal <- function(...) {
+    function(
+        ttnc_before,
+        paranoid = TRUE
+    ) {
+        if(paranoid) {
+            stopifnot(is.numeric(ttnc_before) && is.matrix(ttnc_before))
+            stopifnot(ncol(ttnc_before) == NUM_TYPES)
+            stopifnot(nrow(ttnc_before) == NUM_NODES)
+            stopifnot(all(ttnc_before >= 0))
+        }
 
-    ifelse(
-        ttnc_before <= 0,
-        yes = 1L,
-        no = 0L
-    ) # RETURN
+        ifelse(
+            ttnc_before <= 0,
+            yes = 1L,
+            no = 0L
+        ) # RETURN
+    } # RETURN
 }
 
-get_sel_f_all <- function(s_presence) {
+# minimal selection is frequently used by other selectors
+# we prepare its instance right here
+sel_f_minimal <- get_sel_f_minimal()
+
+get_sel_f_all <- function(s_presence, ...) {
     stopifnot(is.integer(s_presence) && is.matrix(s_presence))
     stopifnot(ncol(s_presence) == NUM_TYPES)
     stopifnot(nrow(s_presence) == NUM_NODES)
@@ -55,7 +61,7 @@ naive_add_nodal <- function(s_presence, s_selected) {
     ) # RETURN
 }
 
-get_sel_f_nodal <- function(s_presence) {
+get_sel_f_nodal <- function(s_presence, ...) {
     stopifnot(is.integer(s_presence) && is.matrix(s_presence))
     stopifnot(ncol(s_presence) == NUM_TYPES)
     stopifnot(nrow(s_presence) == NUM_NODES)
@@ -93,7 +99,7 @@ naive_add_local <- function(n_location, s_presence, s_selected) {
     ) # RETURN
 }
 
-get_sel_f_local <- function(n_location, s_presence) {
+get_sel_f_local <- function(n_location, s_presence, ...) {
     stopifnot(is.integer(n_location) && is.matrix(n_location))
     stopifnot(ncol(n_location) == NUM_SPOTS_POPULATED)
     stopifnot(nrow(n_location) == NUM_NODES)
