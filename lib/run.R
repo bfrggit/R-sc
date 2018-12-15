@@ -1,7 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-13
+# Updated: 2018-12-15
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -75,7 +75,7 @@ run <<- function(
         }
 
         stopifnot(is.function(selector_f))
-        stopifnot(is.function(path_plan_f))
+        stopifnot(is.function(path_plan_f) || is.null(path_plan_f))
 
         stopifnot(is.numeric(max_cost_worker))
         stopifnot(length(max_cost_worker) == 1L)
@@ -156,36 +156,42 @@ run <<- function(
             stopifnot(spot_cali_cost[1L] == 0)
         }
 
-        # preprocess for calculating movement cost
-        path_time[it] <- system.time(
-            paths_array <- path_plan_f(
-                l_selected      = selected_spots,
-                distance_matrix = distance_matrix,
-                max_cost_worker = max_cost_worker,
-                spot_cali_cost  = spot_cali_cost,
-                paranoid        = pp_paranoid # paranoid
-            )
-        )[3]
-
-        if(paranoid) {
-            stopifnot(
-                is_valid_multi_paths_array(
-                    paths_array = paths_array,
-                    l_selected = selected_spots,
-                    must_start_from_spot = 1L,
-                    paranoid = paranoid
+        if(is.null(path_plan_f)) {
+            path_time[it] <- NA
+            move_cost[it] <- NA
+            num_paths[it] <- NA
+        } else {
+            # preprocess for calculating movement cost
+            path_time[it] = system.time(
+                paths_array <- path_plan_f(
+                    l_selected      = selected_spots,
+                    distance_matrix = distance_matrix,
+                    max_cost_worker = max_cost_worker,
+                    spot_cali_cost  = spot_cali_cost,
+                    paranoid        = pp_paranoid # paranoid
                 )
-            )
-        }
+            )[3]
 
-                # movement cost
-        move_cost_per_worker <- get_move_dist_per_worker(
-            distance_matrix = distance_matrix,
-            paths_array     = paths_array,
-            paranoid        = paranoid
-        )
-        move_cost[it] <- sum(move_cost_per_worker)
-        num_paths[it] <- sum(move_cost_per_worker > 0)
+            if(paranoid) {
+                stopifnot(
+                    is_valid_multi_paths_array(
+                        paths_array = paths_array,
+                        l_selected = selected_spots,
+                        must_start_from_spot = 1L,
+                        paranoid = paranoid
+                    )
+                )
+            }
+
+            # movement cost
+            move_cost_per_worker <- get_move_dist_per_worker(
+                distance_matrix = distance_matrix,
+                paths_array     = paths_array,
+                paranoid        = paranoid
+            )
+            move_cost[it] <- sum(move_cost_per_worker)
+            num_paths[it] <- sum(move_cost_per_worker > 0)
+        }
 
         if(verbose) {
             cat(
