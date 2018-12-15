@@ -4,6 +4,7 @@ NUM_TYPES=10
 NUM_NODES=100
 NUM_EDGES=300
 CASE_GRAPH=4
+NUM_ITERS=50
 RE_NUMBER='^[0-9]+$'
 
 print_usage() {
@@ -75,7 +76,7 @@ if [ $? -ne 0 ]; then exit $?; fi
 
 simu/simu.R \
 --paranoid \
--W 100 \
+-W ${NUM_ITERS} \
 -x 1e+4 \
 -y 1 \
 -z 5 \
