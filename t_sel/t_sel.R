@@ -120,7 +120,8 @@ SELECTORS <- c(
     "local_lim",
     "nodal",
     "nodal_lim",
-    "score_1"
+    "score_1",
+    "score_2"
 )
 lockBinding("SELECTORS", globalenv())
 

@@ -1,20 +1,21 @@
-# sel_score_1.R
+# sel_score_2.R
 #
 # Created: 2018-12-12
 # Updated: 2018-12-16
 #  Author: Charles Zhu
 #
 # sensor selection planner
-# greedy implmentation
+# greedy implmentation with local selection add-on
 
-if(!exists("EX_SEL_SCORE_1_R")) {
-    EX_SEL_SCORE_1_R <<- TRUE
+if(!exists("EX_SEL_SCORE_2_R")) {
+    EX_SEL_SCORE_2_R <<- TRUE
 
 source("lib/aux.R")
 source("lib/naive_sel.R")
+source("lib/naive_sel_lim.R")
 source("solution/pp_greedy_1.R")
 
-get_sel_f_score_1 <- function(
+get_sel_f_score_2 <- function(
     n_location,         # node location matrix
     s_presence,         # sensor presence matrix
     distance_matrix,    # distance matrix calculated from the map graph
@@ -49,6 +50,13 @@ get_sel_f_score_1 <- function(
     stopifnot(is.integer(st_cali_t))
     stopifnot(length(st_cali_t) == NUM_TYPES)
 
+    sel_f_local_lim_nested <- get_sel_f_local_lim(
+        st_cali_t   = st_cali_t,
+        n_location  = n_location,
+        s_presence  = s_presence,
+        multi_cali  = multi_cali
+    )
+
     function(
         ttnc_before,
         paranoid = TRUE
@@ -58,7 +66,7 @@ get_sel_f_score_1 <- function(
         }
 
         # rolling selection of sensors starting with the minimal selection
-        sel <- sel_minimal <- sel_f_minimal(
+        sel <- sel_local_lim <- sel_f_local_lim_nested(
             ttnc_before = ttnc_before,
             paranoid = paranoid
         )
@@ -268,7 +276,8 @@ get_sel_f_score_1 <- function(
             sel[node_cp, type_cp] <- 1L
 
             #---------------------------------------------------------------
-            # recompute all metrics or update them smartly
+            # recompute all metrics
+            # TODO: improve this part
             #
             # find selected spots
             # l_selected_old <- get_selected_spots_from_selected_sensors(
@@ -299,7 +308,6 @@ get_sel_f_score_1 <- function(
                     max(spot_cali_cost[spot_cp], st_cali_t[type_cp])
                 cali_cost <- sum(spot_cali_cost)
 
-                # update movement cost
                 greedy_tour_list <- get_multi_paths_greedy_1(
                     l_selected      = l_selected,
                     distance_matrix = distance_matrix,
