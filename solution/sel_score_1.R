@@ -24,7 +24,8 @@ get_sel_f_score_1 <- function(
     max_cost_worker,    # need this to estimate move time
     weight_overhead,
     weight_cali,
-    weight_move
+    weight_move,
+    verbose = FALSE     # enable/disable verbose output for debugging
 ) {
     stopifnot(is.integer(n_location) && is.matrix(n_location))
     stopifnot(ncol(n_location) == NUM_SPOTS_POPULATED)
@@ -52,6 +53,10 @@ get_sel_f_score_1 <- function(
         ttnc_before,
         paranoid = TRUE
     ) {
+        if(verbose) {
+            cat("-> Selection algorithm: score_1\n")
+        }
+
         # rolling selection of sensors starting with the minimal selection
         sel <- sel_minimal <- sel_f_minimal(
             ttnc_before = ttnc_before,
@@ -112,16 +117,25 @@ get_sel_f_score_1 <- function(
             )
         )
 
-        # compute utility of current selection
-        plan_util <- (weight_overhead +
+        # compute efficiency of current selection
+        plan_effi <- (weight_overhead +
             weight_cali * cali_cost +
             weight_move * move_cost) / ttni
 
         # history records
         history_sel <- list()
-        history_util <- numeric()
+        history_effi <- numeric()
         history_sel[[1L]] <- sel
-        history_util[1L] <- plan_util
+        history_effi[1L] <- plan_effi
+
+        if(verbose){
+            cat(sprintf("%-35s", paste(
+                sprintf("%8s,", sprintf("(%d)", length(history_sel))),
+                sprintf("sel = %d at %d,", sum(sel), sum(l_selected))
+            )),
+            sprintf("effi = %.3f\n", plan_effi)
+            )
+        }
 
         # list out all unselected node-type pairs (i.e. sensors)
         unsel <- (s_presence - sel > 0)
@@ -134,16 +148,16 @@ get_sel_f_score_1 <- function(
             pair_score_eval <- # evaluation of score of each node-type pair
                 pair_score_cali <- # individual term in the score eval
                 pair_score_move <-
-                pari_score_ttni <-
-                ifelse(unsel, yes = NA, no = -Inf)
+                pair_score_ttni <-
+                ifelse(unsel, yes = NA, no = +Inf)
 
             # loop to test each possible pair
             # pick the one with highest score
             for(test_pair_id in 1L:cnt_unsel) {
-                tp <- paris_unsel[test_pair_id, ] # test pair
+                tp <- pairs_unsel[test_pair_id, ] # test pair
                 node_tp <- tp[1L]
                 type_tp <- tp[2L]
-                spot_tp <- which(n_location[node_tp, ])
+                spot_tp <- which(n_location[node_tp, ] > 0)
 
                 # compute new interval length
                 sel_tmp <- sel # build temporary selection mat
@@ -168,7 +182,7 @@ get_sel_f_score_1 <- function(
                 # estimate new movement cost
                 pair_score_move[node_tp, type_tp] <- move_cost # TODO: approx.
 
-                # compute/estimate utility of new selection
+                # compute/estimate efficiency of new selection
                 pair_score_eval[node_tp, type_tp] <- (weight_overhead +
                         weight_cali * pair_score_cali[node_tp, type_tp] +
                         weight_move * pair_score_move[node_tp, type_tp]) /
@@ -176,14 +190,14 @@ get_sel_f_score_1 <- function(
             }
 
             if(paranoid) {
-                stopifnot(any(is.na(pair_score_eval)))
-                stopifnot(any(is.na(pair_score_cali)))
-                stopifnot(any(is.na(pair_score_move)))
-                stopifnot(any(is.na(pair_score_ttni)))
+                stopifnot(!any(is.na(pair_score_eval)))
+                stopifnot(!any(is.na(pair_score_cali)))
+                stopifnot(!any(is.na(pair_score_move)))
+                stopifnot(!any(is.na(pair_score_ttni)))
             }
 
             cp <- which(
-                pair_score_eval == max(pair_score_eval),
+                pair_score_eval == min(pair_score_eval),
                 arr.ind = TRUE
             )[1L, ] # chosen pair
             cp_node <- cp[1L]
@@ -244,12 +258,21 @@ get_sel_f_score_1 <- function(
                 )
             )
 
-            # compute utility of current selection
-            plan_util <- (weight_overhead +
+            # compute efficiency of current selection
+            plan_effi <- (weight_overhead +
                 weight_cali * cali_cost +
                 weight_move * move_cost) / ttni
             history_sel[[length(history_sel) + 1L]] <- sel
-            history_util[length(history_util) + 1L] <-plan_util
+            history_effi[length(history_effi) + 1L] <- plan_effi
+
+            if(verbose) {
+                cat(sprintf("%-35s", paste(
+                    sprintf("%8s,", sprintf("(%d)", length(history_sel))),
+                    sprintf("sel = %d at %d,", sum(sel), sum(l_selected))
+                    )),
+                    sprintf("effi = %.3f\n", plan_effi)
+                )
+            }
 
             # list out all unselected node-type pairs (i.e. sensors)
             unsel <- (s_presence - sel > 0)
@@ -260,8 +283,20 @@ get_sel_f_score_1 <- function(
 
         # find the best plan
         best_selection_id <- which(
-            history_util == max(history_util)
+            history_effi == min(history_effi)
         )[1L]
+
+        if(verbose) {
+            cat("Selection algorithm done.\n")
+            cat(sprintf("%-35s",
+                sprintf("%8s,", sprintf("(%d)", best_selection_id))
+                ),
+                sprintf("effi = %.3f\n",
+                    history_effi[best_selection_id])
+            )
+            cat("<- ")
+        }
+
         history_sel[[best_selection_id]] # RETURN
     } # RETURN
 }

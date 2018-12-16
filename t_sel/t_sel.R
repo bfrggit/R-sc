@@ -76,10 +76,10 @@ opt_list = list(
         c("--paranoid"),
         action = "store_true", default = FALSE, type = "logical",
         help = "Enable paranoid mode, default = %default"),
-    make_option(
-        c("--paranoid_path_planner"),
-        action = "store_true", default = FALSE, type = "logical",
-        help = "Enable paranoid mode for path planner, default = %default"),
+    # make_option(
+    #     c("--paranoid_path_planner"),
+    #     action = "store_true", default = FALSE, type = "logical",
+    #     help = "Enable paranoid mode for path planner, default = %default"),
     make_option(
         c("-v", "--verbose"),
         action = "store_true", default = FALSE, type = "logical",
@@ -119,7 +119,8 @@ SELECTORS <- c(
     "local",
     "local_lim",
     "nodal",
-    "nodal_lim"
+    "nodal_lim",
+    "score_1"
 )
 lockBinding("SELECTORS", globalenv())
 
@@ -206,9 +207,16 @@ stopifnot(is.function(get_sel_f))
 
 sel_f <- get_sel_f(
     st_cali_t   = st_specs$st_cali_t,
+    st_period   = st_specs$st_period,
     n_location  = location_matrix,
     s_presence  = presence,
-    multi_cali  = opt$multi_cali
+    distance_matrix = map_graph_distances,
+    multi_cali      = opt$multi_cali,
+    max_cost_worker = opt$max_cost_worker,
+    weight_overhead = opt$weight_overhead,
+    weight_cali     = opt$weight_cali,
+    weight_move     = opt$weight_move,
+    verbose         = opt$verbose
 )
 stopifnot(is.function(sel_f))
 
@@ -282,7 +290,7 @@ res_case <- run(
     multi_cali      = opt$multi_cali,
     max_cost_worker = opt$max_cost_worker,
     paranoid        = opt$paranoid,
-    pp_paranoid     = opt$paranoid_path_planner,
+    pp_paranoid     = FALSE,
     verbose         = opt$verbose
 )
 
