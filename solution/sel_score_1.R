@@ -193,24 +193,28 @@ get_sel_f_score_1 <- function(
                 pair_score_cali[node_tp, type_tp] <- sum(spot_cali_cost_tmp)
 
                 # estimate new movement cost
-                single_step_res <- greedy_add_nearest_neighbor(
-                    tour_list   = greedy_tour_list,
-                    cost_sum    = greedy_cost_sum,
-                    unvisited   = spot_tp,
-                    distance_matrix = distance_matrix,
-                    max_cost_worker = max_cost_worker,
-                    spot_cali_cost  = spot_cali_cost_tmp,
-                    paranoid    = paranoid
-                )
-                pair_score_move[node_tp, type_tp] <- sum(
-                    greedy_list_get_multi_tour_len(
-                        tour_list       = single_step_res$tour_list,
-                        l_selected      = l_selected_tmp,
+                if(l_selected[spot_tp] > 0) {
+                    pair_score_move[node_tp, type_tp] <- move_cost
+                } else {
+                    single_step_res <- greedy_add_nearest_neighbor(
+                        tour_list   = greedy_tour_list,
+                        cost_sum    = greedy_cost_sum,
+                        unvisited   = spot_tp,
                         distance_matrix = distance_matrix,
-                        start_from_spot = 1L,
-                        paranoid        = FALSE
+                        max_cost_worker = max_cost_worker,
+                        spot_cali_cost  = spot_cali_cost_tmp,
+                        paranoid    = paranoid
                     )
-                )
+                    pair_score_move[node_tp, type_tp] <- sum(
+                        greedy_list_get_multi_tour_len(
+                            tour_list       = single_step_res$tour_list,
+                            l_selected      = l_selected_tmp,
+                            distance_matrix = distance_matrix,
+                            start_from_spot = 1L,
+                            paranoid        = paranoid # FALSE
+                        )
+                    )
+                }
 
                 # compute/estimate efficiency of new selection
                 pair_score_eval[node_tp, type_tp] <- (weight_overhead +
