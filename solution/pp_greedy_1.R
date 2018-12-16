@@ -1,7 +1,7 @@
 # pp_greedy_1.R
 #
 # Created: 2018-12-03
-# Updated: 2018-12-05
+# Updated: 2018-12-16
 #  Author: Charles Zhu
 #
 # mTSP (path planning) solver
@@ -126,6 +126,124 @@ greedy_list_get_multi_cali_sum <- function(
     ) # RETURN
 }
 
+greedy_add_nearest_neighbor <<- function(
+    tour_list,
+    cost_sum,
+    unvisited,
+    distance_matrix,        # distance matrix
+    max_cost_worker,        # max workload of any single worker
+    spot_cali_cost,         # per-spot calibration cost
+    paranoid                # enable/disable paranoid checks
+) {
+    if(paranoid) {
+        stopifnot(length(tour_list) == length(cost_sum))
+    }
+
+    # compute the costs if a spot is added to a new worker
+    tour_sum_new_w <- distance_matrix[
+        1L, unvisited
+        ] + distance_matrix[
+            unvisited, 1L
+            ]
+    min_d_cost_new <- min(tour_sum_new_w)
+    flag_new_worker <- TRUE
+    to_visit <- NULL
+
+    # if there are already workers that are deployed
+    # i.e. this is not the first iteration in this loop
+    if(length(tour_list) > 0) {
+        # compute a matrix of travel distance increase to old workers
+        # each row is an old worker, i.e. tour
+        # each col is an unvisited spot
+        d_tour_sum_old_w <- matrix(
+            unlist(
+                lapply(
+                    tour_list,
+                    function(tour) {
+                        last_spot <- tour[length(tour)]
+
+                        distance_matrix[        # add last spot to new spot
+                            last_spot, unvisited
+                        ] + distance_matrix[    # add new spot to depot
+                            unvisited, 1L
+                        ] - distance_matrix[    # minus last spot to depot
+                            last_spot, 1L
+                        ] # RETURN
+                    }
+                ) # this result in a list, whose length equals num of tours
+            ),
+            nrow = length(tour_list),
+            ncol = length(unvisited),
+            byrow = TRUE
+        )
+
+        # compute new cost for old workers to check constraint
+        if(is.finite(max_cost_worker)) {
+            new_cost_sum_old_w <- matrix(
+                rep(cost_sum, length(unvisited)),
+                nrow = length(tour_list),
+                ncol = length(unvisited),
+                byrow = FALSE
+            ) + d_tour_sum_old_w + matrix(
+                rep(spot_cali_cost[unvisited], length(tour_list)),
+                nrow = length(tour_list),
+                ncol = length(unvisited),
+                byrow = TRUE
+            )
+
+            # in the case of constraint violation
+            # set corresponding delta to +Inf to avoid selection
+            d_tour_sum_old_w[
+                which(new_cost_sum_old_w > max_cost_worker)
+                ] <- +Inf
+        }
+
+        # find the next spot to visit
+        min_d_cost_old <- min(d_tour_sum_old_w)
+
+        # if adding to an old worker is more efficient
+        if(min_d_cost_old <= min_d_cost_new) {
+            # find the minimum cost
+            pair <- which(
+                d_tour_sum_old_w == min_d_cost_old,
+                arr.ind = TRUE
+            )[1L, ]
+            worker_to_load <- pair[1L]
+            to_visit <- unvisited[pair[2L]]
+
+            # modify the tours
+            tour_list[[worker_to_load]][
+                length(tour_list[[worker_to_load]]) + 1L
+                ] <- to_visit
+
+            new_cost <- cost_sum[worker_to_load] + min_d_cost_old
+            if(is.finite(max_cost_worker)) {
+                new_cost <- new_cost + spot_cali_cost[to_visit]
+            }
+            cost_sum[worker_to_load] <- new_cost
+            flag_new_worker <- FALSE
+        }
+    }
+
+    if(flag_new_worker) { # initial move
+        to_visit <- unvisited[which(tour_sum_new_w == min_d_cost_new)[1L]]
+        tour_list[[length(tour_list) + 1L]] <- c(to_visit)
+
+        # compute the tour cost of the newly added worker
+        new_cost <- min_d_cost_new
+        if(is.finite(max_cost_worker)) {
+            new_cost <- new_cost + spot_cali_cost[to_visit]
+        }
+        cost_sum[length(cost_sum) + 1L] <- new_cost
+    }
+
+    list(
+        tour_list   = tour_list,
+        cost_sum    = cost_sum,
+        to_visit    = to_visit
+    ) # RETURN
+}
+
 get_multi_paths_greedy_1 <<- function(
     l_selected,             # selected spots, len L vector
     distance_matrix,        # distance matrix
@@ -174,103 +292,18 @@ get_multi_paths_greedy_1 <<- function(
 
     # loop until all spots are visited
     while(length(unvisited) > 0) {
-        # compute the costs if a spot is added to a new worker
-        tour_sum_new_w <- distance_matrix[
-            1L, unvisited
-        ] + distance_matrix[
-            unvisited, 1L
-        ]
-        min_d_cost_new <- min(tour_sum_new_w)
-        flag_new_worker <- TRUE
-        to_visit <- NULL
-
-        # if there are already workers that are deployed
-        # i.e. this is not the first iteration in this loop
-        if(length(tour_list) > 0) {
-            # compute a matrix of travel distance increase to old workers
-            # each row is an old worker, i.e. tour
-            # each col is an unvisited spot
-            d_tour_sum_old_w <- matrix(
-                unlist(
-                    lapply(
-                        tour_list,
-                        function(tour) {
-                            last_spot <- tour[length(tour)]
-
-                            distance_matrix[        # add last spot to new spot
-                                last_spot, unvisited
-                            ] + distance_matrix[    # add new spot to depot
-                                unvisited, 1L
-                            ] - distance_matrix[    # minus last spot to depot
-                                last_spot, 1L
-                            ] # RETURN
-                        }
-                    ) # this result in a list, whose length equals num of tours
-                ),
-                nrow = length(tour_list),
-                ncol = length(unvisited),
-                byrow = TRUE
-            )
-
-            # compute new cost for old workers to check constraint
-            if(is.finite(max_cost_worker)) {
-                new_cost_sum_old_w <- matrix(
-                    rep(cost_sum, length(unvisited)),
-                    nrow = length(tour_list),
-                    ncol = length(unvisited),
-                    byrow = FALSE
-                ) + d_tour_sum_old_w + matrix(
-                    rep(spot_cali_cost[unvisited], length(tour_list)),
-                    nrow = length(tour_list),
-                    ncol = length(unvisited),
-                    byrow = TRUE
-                )
-
-                # in the case of constraint violation
-                # set corresponding delta to +Inf to avoid selection
-                d_tour_sum_old_w[
-                    which(new_cost_sum_old_w > max_cost_worker)
-                ] <- +Inf
-            }
-
-            # find the next spot to visit
-            min_d_cost_old <- min(d_tour_sum_old_w)
-
-            # if adding to an old worker is more efficient
-            if(min_d_cost_old <= min_d_cost_new) {
-                # find the minimum cost
-                pair <- which(
-                    d_tour_sum_old_w == min_d_cost_old,
-                    arr.ind = TRUE
-                )[1L, ]
-                worker_to_load <- pair[1L]
-                to_visit <- unvisited[pair[2L]]
-
-                # modify the tours
-                tour_list[[worker_to_load]][
-                    length(tour_list[[worker_to_load]]) + 1L
-                ] <- to_visit
-
-                new_cost <- cost_sum[worker_to_load] + min_d_cost_old
-                if(is.finite(max_cost_worker)) {
-                    new_cost <- new_cost + spot_cali_cost[to_visit]
-                }
-                cost_sum[worker_to_load] <- new_cost
-                flag_new_worker <- FALSE
-            }
-        }
-
-        if(flag_new_worker) { # initial move
-            to_visit <- unvisited[which(tour_sum_new_w == min_d_cost_new)[1L]]
-            tour_list[[length(tour_list) + 1L]] <- c(to_visit)
-
-            # compute the tour cost of the newly added worker
-            new_cost <- min_d_cost_new
-            if(is.finite(max_cost_worker)) {
-                new_cost <- new_cost + spot_cali_cost[to_visit]
-            }
-            cost_sum[length(cost_sum) + 1L] <- new_cost
-        }
+        single_step_res <- greedy_add_nearest_neighbor(
+            tour_list   = tour_list,
+            cost_sum    = cost_sum,
+            unvisited   = unvisited,
+            distance_matrix = distance_matrix,
+            max_cost_worker = max_cost_worker,
+            spot_cali_cost  = spot_cali_cost,
+            paranoid    = paranoid
+        )
+        tour_list <- single_step_res$tour_list
+        cost_sum <- single_step_res$cost_sum
+        to_visit <- single_step_res$to_visit
 
         # remove the visited spot from list of unvisited spots
         if(paranoid) {
