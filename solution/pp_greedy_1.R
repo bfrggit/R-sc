@@ -226,7 +226,9 @@ greedy_add_nearest_neighbor <<- function(
     }
 
     if(flag_new_worker) { # initial move
-        to_visit <- unvisited[which(tour_sum_new_w == min_d_cost_new)[1L]]
+        to_visit <- unname(
+            unvisited[which(tour_sum_new_w == min_d_cost_new)[1L]]
+        )
         tour_list[[length(tour_list) + 1L]] <- c(to_visit)
 
         # compute the tour cost of the newly added worker

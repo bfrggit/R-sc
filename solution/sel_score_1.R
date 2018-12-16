@@ -107,15 +107,21 @@ get_sel_f_score_1 <- function(
             raw_return      = TRUE,
             paranoid        = paranoid
         )
-        move_cost <- sum(
-            greedy_list_get_multi_tour_len(
-                tour_list       = greedy_tour_list,
-                l_selected      = l_selected,
-                distance_matrix = distance_matrix,
-                start_from_spot = 1L,
-                paranoid        = paranoid
-            )
+        greedy_multi_cali_sum <- greedy_list_get_multi_cali_sum(
+            tour_list       = greedy_tour_list,
+            l_selected      = l_selected,
+            spot_cali_cost  = spot_cali_cost,
+            paranoid        = paranoid
         )
+        greedy_multi_tour_len <- greedy_list_get_multi_tour_len(
+            tour_list       = greedy_tour_list,
+            l_selected      = l_selected,
+            distance_matrix = distance_matrix,
+            start_from_spot = 1L,
+            paranoid        = paranoid
+        )
+        move_cost <- sum(greedy_multi_tour_len)
+        greedy_cost_sum <- greedy_multi_tour_len + greedy_multi_cali_sum
 
         # compute efficiency of current selection
         plan_effi <- (weight_overhead +
@@ -159,9 +165,16 @@ get_sel_f_score_1 <- function(
                 type_tp <- tp[2L]
                 spot_tp <- which(n_location[node_tp, ] > 0)
 
-                # compute new interval length
+                # create temporary selection mat
                 sel_tmp <- sel # build temporary selection mat
                 sel_tmp[node_tp, type_tp] <- 1L # add test pair
+                l_selected_tmp <- get_selected_spots_from_selected_sensors(
+                    s_selected  = sel_tmp,
+                    n_location  = n_location,
+                    paranoid    = paranoid
+                )
+
+                # compute new interval length
                 ttnc_after_tmp <- get_post_ttnc(
                     st_period   = st_period,
                     ttnc_before = ttnc_before,
@@ -180,7 +193,24 @@ get_sel_f_score_1 <- function(
                 pair_score_cali[node_tp, type_tp] <- sum(spot_cali_cost_tmp)
 
                 # estimate new movement cost
-                pair_score_move[node_tp, type_tp] <- move_cost # TODO: approx.
+                single_step_res <- greedy_add_nearest_neighbor(
+                    tour_list   = greedy_tour_list,
+                    cost_sum    = greedy_cost_sum,
+                    unvisited   = spot_tp,
+                    distance_matrix = distance_matrix,
+                    max_cost_worker = max_cost_worker,
+                    spot_cali_cost  = spot_cali_cost_tmp,
+                    paranoid    = paranoid
+                )
+                pair_score_move[node_tp, type_tp] <- sum(
+                    greedy_list_get_multi_tour_len(
+                        tour_list       = single_step_res$tour_list,
+                        l_selected      = l_selected_tmp,
+                        distance_matrix = distance_matrix,
+                        start_from_spot = 1L,
+                        paranoid        = FALSE
+                    )
+                )
 
                 # compute/estimate efficiency of new selection
                 pair_score_eval[node_tp, type_tp] <- (weight_overhead +
@@ -221,7 +251,7 @@ get_sel_f_score_1 <- function(
                 paranoid    = paranoid
             )
 
-            # compute time-to-next-iteration based on init plan
+            # compute time-to-next-iteration based on current plan
             ttnc_after <- get_post_ttnc(
                 st_period   = st_period,
                 ttnc_before = ttnc_before,
@@ -230,7 +260,7 @@ get_sel_f_score_1 <- function(
             )
             ttni <- min(ttnc_after)
 
-            # compute calibration cost of init plan
+            # compute calibration cost of current plan
             spot_cali_cost <- get_spot_cali_time(
                 st_cali_t   = st_cali_t,
                 s_selected  = sel,
@@ -239,7 +269,7 @@ get_sel_f_score_1 <- function(
             )
             cali_cost <- sum(spot_cali_cost)
 
-            # compute movement cost of init plan
+            # compute movement cost of current plan
             greedy_tour_list <- get_multi_paths_greedy_1(
                 l_selected      = l_selected,
                 distance_matrix = distance_matrix,
@@ -248,15 +278,21 @@ get_sel_f_score_1 <- function(
                 raw_return      = TRUE,
                 paranoid        = paranoid
             )
-            move_cost <- sum(
-                greedy_list_get_multi_tour_len(
-                    tour_list       = greedy_tour_list,
-                    l_selected      = l_selected,
-                    distance_matrix = distance_matrix,
-                    start_from_spot = 1L,
-                    paranoid        = paranoid
-                )
+            greedy_multi_cali_sum <- greedy_list_get_multi_cali_sum(
+                tour_list       = greedy_tour_list,
+                l_selected      = l_selected,
+                spot_cali_cost  = spot_cali_cost,
+                paranoid        = paranoid
             )
+            greedy_multi_tour_len <- greedy_list_get_multi_tour_len(
+                tour_list       = greedy_tour_list,
+                l_selected      = l_selected,
+                distance_matrix = distance_matrix,
+                start_from_spot = 1L,
+                paranoid        = paranoid
+            )
+            move_cost <- sum(greedy_multi_tour_len)
+            greedy_cost_sum <- greedy_multi_tour_len + greedy_multi_cali_sum
 
             # compute efficiency of current selection
             plan_effi <- (weight_overhead +
@@ -289,7 +325,7 @@ get_sel_f_score_1 <- function(
         if(verbose) {
             cat("Selection algorithm done.\n")
             cat(sprintf("%-35s",
-                sprintf("%8s,", sprintf("(%d)", best_selection_id))
+                sprintf("%8s ", sprintf("(%d)", best_selection_id))
                 ),
                 sprintf("effi = %.3f\n",
                     history_effi[best_selection_id])
