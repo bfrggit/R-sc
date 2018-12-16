@@ -1,7 +1,7 @@
 # sel_score_1.R
 #
 # Created: 2018-12-12
-# Updated: 2018-12-14
+# Updated: 2018-12-16
 #  Author: Charles Zhu
 #
 # sensor selection planner
@@ -151,11 +151,17 @@ get_sel_f_score_1 <- function(
 
         # loop until all sensors are selected
         while(cnt_unsel > 0) {
+            # spot_score_move <- rep(NA, length(l_selected))
             pair_score_eval <- # evaluation of score of each node-type pair
                 pair_score_cali <- # individual term in the score eval
-                pair_score_move <-
+              # pair_score_move <-
                 pair_score_ttni <-
                 ifelse(unsel, yes = NA, no = +Inf)
+            spot_score_move <- ifelse(
+                l_selected > 0,
+                yes = move_cost,
+                no = NA
+            )
 
             # loop to test each possible pair
             # pick the one with highest score
@@ -168,34 +174,46 @@ get_sel_f_score_1 <- function(
                 # create temporary selection mat
                 sel_tmp <- sel # build temporary selection mat
                 sel_tmp[node_tp, type_tp] <- 1L # add test pair
-                l_selected_tmp <- get_selected_spots_from_selected_sensors(
-                    s_selected  = sel_tmp,
-                    n_location  = n_location,
-                    paranoid    = paranoid
-                )
+                # l_selected_tmp_old <- get_selected_spots_from_selected_sensors(
+                #     s_selected  = sel_tmp,
+                #     n_location  = n_location,
+                #     paranoid    = paranoid
+                # )
+                l_selected_tmp <- l_selected
+                l_selected_tmp[spot_tp] <- 1L
+
+                # simplification check
+                # stopifnot(all(l_selected_tmp == l_selected_tmp_old))
 
                 # compute new interval length
-                ttnc_after_tmp <- get_post_ttnc(
-                    st_period   = st_period,
-                    ttnc_before = ttnc_before,
-                    s_selected  = sel_tmp,
-                    paranoid    = paranoid
-                )
+                # ttnc_after_tmp_old <- get_post_ttnc(
+                #     st_period   = st_period,
+                #     ttnc_before = ttnc_before,
+                #     s_selected  = sel_tmp,
+                #     paranoid    = paranoid
+                # )
+                ttnc_after_tmp <- ttnc_after
+                ttnc_after_tmp[node_tp, type_tp] <- st_period[type_tp]
                 pair_score_ttni[node_tp, type_tp] <- min(ttnc_after_tmp)
 
+                # simplification check
+                # stopifnot(all(ttnc_after_tmp == ttnc_after_tmp_old))
+
                 # compute new calibration cost
-                spot_cali_cost_tmp <- get_spot_cali_time(
-                    st_cali_t   = st_cali_t,
-                    s_selected  = sel_tmp,
-                    n_location  = n_location,
-                    paranoid    = paranoid
-                )
-                pair_score_cali[node_tp, type_tp] <- sum(spot_cali_cost_tmp)
+                pair_score_cali[node_tp, type_tp] <- cali_cost + max(
+                    0, st_cali_t[type_tp] - spot_cali_cost[spot_tp])
 
                 # estimate new movement cost
-                if(l_selected[spot_tp] > 0) {
-                    pair_score_move[node_tp, type_tp] <- move_cost
-                } else {
+                # if(l_selected[spot_tp] > 0) {
+                #     pair_score_move[node_tp, type_tp] <- move_cost
+                # } else {
+                if(is.na(spot_score_move[spot_tp])) {
+                    # per-spot cali cost is input of estimation
+                    spot_cali_cost_tmp <- spot_cali_cost
+                    spot_cali_cost_tmp[spot_tp] <-
+                        max(spot_cali_cost_tmp[spot_tp], st_cali_t[type_tp])
+
+                    # incremental estimation of movement cost
                     single_step_res <- greedy_add_nearest_neighbor(
                         tour_list   = greedy_tour_list,
                         cost_sum    = greedy_cost_sum,
@@ -205,7 +223,7 @@ get_sel_f_score_1 <- function(
                         spot_cali_cost  = spot_cali_cost_tmp,
                         paranoid    = paranoid
                     )
-                    pair_score_move[node_tp, type_tp] <- sum(
+                    spot_score_move[spot_tp] <- sum(
                         greedy_list_get_multi_tour_len(
                             tour_list       = single_step_res$tour_list,
                             l_selected      = l_selected_tmp,
@@ -217,16 +235,20 @@ get_sel_f_score_1 <- function(
                 }
 
                 # compute/estimate efficiency of new selection
+                # pair_score_eval[node_tp, type_tp] <- (weight_overhead +
+                #         weight_cali * pair_score_cali[node_tp, type_tp] +
+                #         weight_move * pair_score_move[node_tp, type_tp]) /
+                #     pair_score_ttni[node_tp, type_tp]
                 pair_score_eval[node_tp, type_tp] <- (weight_overhead +
-                        weight_cali * pair_score_cali[node_tp, type_tp] +
-                        weight_move * pair_score_move[node_tp, type_tp]) /
+                          weight_cali * pair_score_cali[node_tp, type_tp] +
+                          weight_move * spot_score_move[spot_tp]) /
                     pair_score_ttni[node_tp, type_tp]
             }
 
             if(paranoid) {
                 stopifnot(!any(is.na(pair_score_eval)))
                 stopifnot(!any(is.na(pair_score_cali)))
-                stopifnot(!any(is.na(pair_score_move)))
+              # stopifnot(!any(is.na(pair_score_move)))
                 stopifnot(!any(is.na(pair_score_ttni)))
             }
 
