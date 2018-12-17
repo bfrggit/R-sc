@@ -89,13 +89,23 @@ get_sel_f_score_1 <- function(
         ttni <- min(ttnc_after)
 
         # compute calibration cost of init plan
-        spot_cali_cost <- get_spot_cali_time(
-            st_cali_t   = st_cali_t,
-            s_selected  = sel,
-            n_location  = n_location,
-            multi_cali  = multi_cali,
-            paranoid    = paranoid
-        )
+        spot_cali_cost <- NULL
+        if(multi_cali) {
+            spot_cali_cost <- get_spot_cali_time(
+                st_cali_t   = st_cali_t,
+                s_selected  = sel,
+                n_location  = n_location,
+                multi_cali  = multi_cali,
+                paranoid    = paranoid
+            )
+        } else {
+            node_cali_cost <- get_node_cali_time(
+                st_cali_t   = st_cali_t,
+                s_selected  = sel,
+                paranoid    = paranoid
+            )
+            spot_cali_cost <- rowSums(t(n_location) %*% diag(node_cali_cost))
+        }
         cali_cost <- sum(spot_cali_cost)
 
         # compute movement cost of init plan
@@ -200,18 +210,33 @@ get_sel_f_score_1 <- function(
                 # stopifnot(all(ttnc_after_tmp == ttnc_after_tmp_old))
 
                 # compute new calibration cost
-                pair_score_cali[node_tp, type_tp] <- cali_cost + max(
-                    0, st_cali_t[type_tp] - spot_cali_cost[spot_tp])
+                if(multi_cali) {
+                    pair_score_cali[node_tp, type_tp] <- cali_cost + max(
+                        0, st_cali_t[type_tp] - spot_cali_cost[spot_tp])
+                } else {
+                    pair_score_cali[node_tp, type_tp] <- cali_cost + max(
+                        0, st_cali_t[type_tp] - node_cali_cost[node_tp])
+                }
 
                 # estimate new movement cost
-                # if(l_selected[spot_tp] > 0) {
-                #     pair_score_move[node_tp, type_tp] <- move_cost
-                # } else {
+                # this is only an estimation
+                # it does not consider if an old path becomes invalid
+                #   when more workload is added there
                 if(is.na(spot_score_move[spot_tp])) {
                     # per-spot cali cost is input of estimation
                     spot_cali_cost_tmp <- spot_cali_cost
-                    spot_cali_cost_tmp[spot_tp] <-
-                        max(spot_cali_cost_tmp[spot_tp], st_cali_t[type_tp])
+                    if(multi_cali) {
+                        spot_cali_cost_tmp[spot_tp] <-
+                            max(spot_cali_cost_tmp[spot_tp],
+                                st_cali_t[type_tp])
+                    } else {
+                        node_cali_cost_tmp <- node_cali_cost
+                        node_cali_cost_tmp[node_tp] <-
+                            max(node_cali_cost_tmp[node_tp],
+                                st_cali_t[type_tp])
+                        spot_cali_cost_tmp[spot_tp] <- sum(
+                            t(n_location[, spot_tp]) * node_cali_cost_tmp)
+                    }
 
                     # incremental estimation of movement cost
                     single_step_res <- greedy_add_nearest_neighbor(
@@ -240,8 +265,8 @@ get_sel_f_score_1 <- function(
                 #         weight_move * pair_score_move[node_tp, type_tp]) /
                 #     pair_score_ttni[node_tp, type_tp]
                 pair_score_eval[node_tp, type_tp] <- (weight_overhead +
-                          weight_cali * pair_score_cali[node_tp, type_tp] +
-                          weight_move * spot_score_move[spot_tp]) /
+                        weight_cali * pair_score_cali[node_tp, type_tp] +
+                        weight_move * spot_score_move[spot_tp]) /
                     pair_score_ttni[node_tp, type_tp]
             }
 
@@ -292,11 +317,25 @@ get_sel_f_score_1 <- function(
 
             # if newly added selection does not affect cali cost at its spot
             # then there is no need to recompute cali or move cost
-            flag_cali_inc <- (st_cali_t[type_cp] > spot_cali_cost[spot_cp])
+            flag_cali_inc <- NULL
+            if(multi_cali) {
+                flag_cali_inc <- (st_cali_t[type_cp] > spot_cali_cost[spot_cp])
+            } else {
+                flag_cali_inc <- (st_cali_t[type_cp] > node_cali_cost[node_cp])
+            }
             if(flag_cali_inc) {
                 # update calibartion cost
-                spot_cali_cost[spot_cp] <-
-                    max(spot_cali_cost[spot_cp], st_cali_t[type_cp])
+                if(multi_cali) {
+                    spot_cali_cost[spot_cp] <-
+                        max(spot_cali_cost[spot_cp], st_cali_t[type_cp])
+                } else {
+                    node_cali_cost[node_cp] <-
+                        max(node_cali_cost[node_cp], st_cali_t[type_cp])
+                    # spot_cali_cost <-
+                    #     rowSums(t(n_location) %*% diag(node_cali_cost))
+                    spot_cali_cost[spot_cp] <- sum(
+                        t(n_location[, spot_cp]) * node_cali_cost)
+                }
                 cali_cost <- sum(spot_cali_cost)
 
                 # update movement cost
@@ -326,6 +365,16 @@ get_sel_f_score_1 <- function(
                 )
                 greedy_cost_sum <- greedy_multi_tour_len + greedy_multi_cali_sum
             }
+
+            # simplification check
+            # spot_cali_cost_old <- get_spot_cali_time(
+            #     st_cali_t   = st_cali_t,
+            #     s_selected  = sel,
+            #     n_location  = n_location,
+            #     multi_cali  = multi_cali,
+            #     paranoid    = paranoid
+            # )
+            # stopifnot(all(spot_cali_cost == spot_cali_cost_old))
 
             # compute efficiency of current selection
             plan_effi <- (weight_overhead +

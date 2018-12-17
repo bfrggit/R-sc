@@ -9,11 +9,9 @@
 if(!exists("EX_AUX_R")) {
     EX_AUX_R <<- TRUE
 
-get_spot_cali_time <<- function(
+get_node_cali_time <<- function(
     st_cali_t,              # sensor type calibration time/cost
     s_selected,             # selected sensors
-    n_location,             # node location matrix, needed for multi-party
-    multi_cali = TRUE,      # enable/disable multi-party calibration
     paranoid = TRUE         # enable/disable paranoid checks
 ) {
     if(paranoid) {
@@ -24,7 +22,23 @@ get_spot_cali_time <<- function(
         stopifnot(ncol(s_selected) == NUM_TYPES)
         stopifnot(nrow(s_selected) == NUM_NODES)
         stopifnot(all(s_selected == 0L | s_selected == 1L))
+    }
 
+    apply(
+        s_selected %*% diag(st_cali_t), # per-sensor time, N by K
+        MARGIN = 1L,
+        FUN = max
+    ) # RETURN, per-node time, N by 1
+}
+
+get_spot_cali_time <<- function(
+    st_cali_t,              # sensor type calibration time/cost
+    s_selected,             # selected sensors
+    n_location,             # node location matrix, needed for multi-party
+    multi_cali = TRUE,      # enable/disable multi-party calibration
+    paranoid = TRUE         # enable/disable paranoid checks
+) {
+    if(paranoid) {
         stopifnot(is.integer(n_location) && is.matrix(n_location))
         stopifnot(ncol(n_location) == NUM_SPOTS_POPULATED)
         stopifnot(nrow(n_location) == NUM_NODES)
@@ -33,10 +47,10 @@ get_spot_cali_time <<- function(
 
     apply(
         t(n_location) %*% diag(
-            apply(
-                s_selected %*% diag(st_cali_t), # per-sensor time, N by K
-                MARGIN = 1L,
-                FUN = max
+            get_node_cali_time(
+                st_cali_t   = st_cali_t,
+                s_selected  = s_selected,
+                paranoid    = paranoid
             ) # per-node time, N by 1
         ), # per-spot-node time, L by N
         MARGIN = 1L,
