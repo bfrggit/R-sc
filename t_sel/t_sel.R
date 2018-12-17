@@ -115,6 +115,7 @@ if(is.na(opt$distance_file)) {
 
 SELECTORS <- c(
     "all",
+    "interval_1",
     "minimal",
     "local",
     "local_lim",
