@@ -62,7 +62,7 @@ get_sel_f_score_2 <- function(
         paranoid = TRUE
     ) {
         if(verbose) {
-            cat("-> Selection algorithm: score_1\n")
+            cat("-> Selection algorithm: score_2\n")
         }
 
         # rolling selection of sensors starting with the minimal selection
