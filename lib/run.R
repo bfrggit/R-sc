@@ -1,7 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-15
+# Updated: 2018-12-17
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -28,7 +28,8 @@ run <<- function(
     max_cost_worker = +Inf, # constraint
     paranoid = TRUE,        # enable/disable paranoid checks
     pp_paranoid = FALSE,    # enable/disable paranoid for path planner
-    verbose = FALSE         # enable/disable verbose output for debugging
+    verbose = FALSE,        # enable/disable verbose output for debugging
+    keep_history = FALSE    # enable/disable result history keeping
 ) {
     # in this simulation,
     # metrics are returned in raw values that are not yet normalized
@@ -94,6 +95,14 @@ run <<- function(
     num_paths <- numeric()
     selc_time <- numeric()
     path_time <- numeric()
+
+    # result history keeping
+    history_selection <- NULL
+    history_paths <- NULL
+    if(keep_history) {
+        history_selection <- list()
+        history_paths <- list()
+    }
 
     ttnc <- ttnc_init - min(ttnc_init)
     it <- 0L
@@ -200,6 +209,13 @@ run <<- function(
             )
         }
 
+        if(keep_history) {
+            history_selection[[length(history_selection) + 1L]] <-
+                selected_spots
+            history_paths[[length(history_paths) + 1L]] <-
+                paths_array
+        }
+
         # state transition
         ttnc_after <- get_post_ttnc(
             st_period   = st_period,
@@ -225,6 +241,12 @@ run <<- function(
         names(path_time) <-
         z_nd_str("iter", it)
 
+    if(keep_history) {
+        names(history_selection) <-
+            names(history_paths) <-
+            z_nd_str("iter", it)
+    }
+
     res <- list()
     res$num_iters <- it
     res$sum_intervals <- acc_intervals
@@ -234,6 +256,8 @@ run <<- function(
     res$num_paths <- num_paths
     res$selc_time <- selc_time
     res$path_time <- path_time
+    res$history_selection <- history_selection
+    res$history_paths <- history_paths
     res # RETURN
 }
 

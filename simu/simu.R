@@ -3,7 +3,7 @@
 # simu.R
 #
 # Created: 2018-10-05
-# Updated: 2018-12-13
+# Updated: 2018-12-17
 #  Author: Charles Zhu
 #
 # derived from simu_no_move.R
@@ -116,6 +116,7 @@ if(is.na(opt$distance_file)) {
 
 SELECTORS <- c(
     "all",
+    "interval_1",
     "minimal",
     "local",
     "local_lim",
@@ -207,9 +208,16 @@ stopifnot(is.function(get_sel_f))
 
 sel_f <- get_sel_f(
     st_cali_t   = st_specs$st_cali_t,
+    st_period   = st_specs$st_period,
     n_location  = location_matrix,
     s_presence  = presence,
-    multi_cali  = opt$multi_cali
+    distance_matrix = map_graph_distances,
+    multi_cali      = opt$multi_cali,
+    max_cost_worker = opt$max_cost_worker,
+    weight_overhead = opt$weight_overhead,
+    weight_cali     = opt$weight_cali,
+    weight_move     = opt$weight_move,
+    verbose         = FALSE
 )
 stopifnot(is.function(sel_f))
 
