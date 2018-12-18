@@ -86,6 +86,10 @@ opt_list = list(
         action = "store_true", default = FALSE, type = "logical",
         help = "Enable verbose output, default = %default"),
     make_option(
+        c("--keep_history"),
+        action = "store_true", default = FALSE, type = "logical",
+        help = "Enable result history keeping, default = %default"),
+    make_option(
         c("--additional_field"),
         action = "store", default = NA, type = "character",
         help = "Additional field name(s), default = %default"),
@@ -293,7 +297,8 @@ res_case <- run(
     max_cost_worker = opt$max_cost_worker,
     paranoid        = opt$paranoid,
     pp_paranoid     = opt$paranoid_path_planner,
-    verbose         = opt$verbose
+    verbose         = opt$verbose,
+    keep_history    = opt$keep_history
 )
 
 stopifnot(length(res_case$intervals) == res_case$num_iters)
