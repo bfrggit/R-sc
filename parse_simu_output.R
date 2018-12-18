@@ -3,7 +3,7 @@
 # parse_simu_output.R
 #
 # Created: 2018-12-17
-# Author: Charles Zhu
+#  Author: Charles Zhu
 #
 rm(list = ls())
 
@@ -56,31 +56,38 @@ for(it in 1L:res_case$num_iters) {
 
     stopifnot(length(tour_list) > 0)
 
-    cat("---\n")
+    # cat("---\n")
     for(tour_jnd in 1L:length(tour_list)) {
         t_tour <- tour_list[[tour_jnd]]
+        out_fn <- sprintf("%s/iter_%d_worker_%d.txt", out_dir, it, tour_jnd)
         cat(
             sprintf("WORKER %d", tour_jnd),
             "HAS SPOTS IN ORDER",
-            sprintf("%s\n", paste(t_tour, collapse = " "))
+            sprintf("%s\n", paste(t_tour, collapse = " ")),
+            file = out_fn,
+            append = FALSE
         )
         for(t_spot in t_tour) {
             t_spot_nodes <- which(location_matrix[, t_spot] > 0)
             cat(
                 sprintf("SPOT %d", t_spot),
                 "HAS NODES",
-                sprintf("%s\n", paste(t_spot_nodes, collapse = " "))
+                sprintf("%s\n", paste(t_spot_nodes, collapse = " ")),
+                file = out_fn,
+                append = TRUE
             )
             for(t_node in t_spot_nodes) {
                 t_node_sensors <- which(selection[t_node, ] > 0)
                 cat(
                     sprintf("NODE %d", t_node),
                     "HAS SENSORS",
-                    sprintf("%s\n", paste(t_node_sensors, collapse = " "))
+                    sprintf("%s\n", paste(t_node_sensors, collapse = " ")),
+                    file = out_fn,
+                    append = TRUE
                 )
             }
         }
     }
-    cat("---\n")
+    # cat("---\n")
 }
 cat("Done!", "\n")
