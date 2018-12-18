@@ -211,9 +211,9 @@ run <<- function(
 
         if(keep_history) {
             history_selection[[length(history_selection) + 1L]] <-
-                selected_spots
-            history_paths[[length(history_paths) + 1L]] <-
                 selected_sensors
+            history_paths[[length(history_paths) + 1L]] <-
+                paths_array
         }
 
         # state transition
