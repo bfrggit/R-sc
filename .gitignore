@@ -11,4 +11,5 @@
 
 /tmp
 !README.md
+!/scenarios/graph_*_full.RData
 !/scenarios/**/*.csv
