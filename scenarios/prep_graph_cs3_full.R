@@ -3,11 +3,14 @@
 # prep_graph_full_cs3.R
 #
 # Created: 2018-12-31
+# Updated: 2019-01-01
 #  Author: Charles Zhu
 #
 # as always, run this script from the project root
 
 rm(list = ls())
+
+source("lib/basic.R")
 
 MAP_SCALE_FACTOR_CS3 <- 32L # ft-per-unit
 MOVEMENT_SPEED_CS3 <- 3     # ft-per-sec
@@ -91,6 +94,8 @@ for(jnd in 1L:NUM_FLOORS_CS3) {
             )
         )
 }
+colnames(map_graph_adj_matrix) <- rownames(map_graph_adj_matrix) <-
+    z_nd_str("spot", NUM_SPOTS_FULL)
 
 # manually add staircase movement
 staircase_id_cs3 <- list()
