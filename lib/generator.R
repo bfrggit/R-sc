@@ -30,7 +30,7 @@ generate_sensor_types_sample <- function(
     names(sensor_type_period) <- names(sensor_type_cali_t) <-
         paste("type", as.character(1L:num_types), sep = "_")
 
-    res <-list()
+    res <- list()
     res$st_period <- sensor_type_period
     res$st_cali_t <- sensor_type_cali_t
     res # RETURN

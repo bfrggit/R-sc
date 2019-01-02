@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 #
-# prep_graph_full_cs3.R
+# prep_graph_cs3_full.R
 #
 # Created: 2018-12-31
 # Updated: 2019-01-01
