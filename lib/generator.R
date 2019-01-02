@@ -1,7 +1,7 @@
 # generator.R
 #
 # Created: 2018-06-04
-# Updated: 2018-08-02
+# Updated: 2019-01-01
 #  Author: Charles Zhu
 #
 if(!exists("EX_GENERATOR_R")) {
@@ -36,6 +36,7 @@ generate_sensor_types_sample <- function(
     res # RETURN
 }
 
+# generate each individual sensor with the given probability
 generate_sensor_presence_unif <- function(
     num_nodes,
     num_types,
@@ -59,6 +60,70 @@ generate_sensor_presence_unif <- function(
         as.integer(runif(num_nodes * num_types) < prob),
         nrow = num_nodes
     )
+    colnames(res) = paste("type", as.character(1L:num_types), sep = "_")
+    rownames(res) = paste("node", as.character(1L:num_nodes), sep = "_")
+    res # RETURN
+}
+
+# always generate the given total number of sensors
+generate_sensor_presence_sample <- function(
+    num_nodes,
+    num_types,
+    num_sensors
+) {
+    stopifnot(is.integer(num_nodes))
+    stopifnot(length(num_nodes) == 1L)
+    stopifnot(num_nodes > 0L)
+
+    stopifnot(is.integer(num_types))
+    stopifnot(length(num_types) == 1L)
+    stopifnot(num_types > 0L)
+
+    stopifnot(is.integer(num_sensors))
+    stopifnot(length(num_sensors) == 1L)
+    stopifnot(num_sensors > 0L)
+    stopifnot(num_sensors <= num_nodes * num_types)
+
+    # generate the sensor presence matrix
+    res <- matrix(
+        0L,
+        nrow = num_nodes,
+        ncol = num_types
+    )
+    res[sample(1L:(num_nodes * num_types), size = num_sensors)] = 1L
+    colnames(res) = paste("type", as.character(1L:num_types), sep = "_")
+    rownames(res) = paste("node", as.character(1L:num_nodes), sep = "_")
+    res # RETURN
+}
+
+# always generate the given number of sensors of each type
+generate_sensor_presence_sample_per_type <- function(
+    num_nodes,
+    num_types,
+    num_sensors_per_type
+) {
+    stopifnot(is.integer(num_nodes))
+    stopifnot(length(num_nodes) == 1L)
+    stopifnot(num_nodes > 0L)
+
+    stopifnot(is.integer(num_types))
+    stopifnot(length(num_types) == 1L)
+    stopifnot(num_types > 0L)
+
+    stopifnot(is.integer(num_sensors_per_type))
+    stopifnot(length(num_sensors_per_type) == num_types)
+    stopifnot(all(num_sensors_per_type > 0L))
+    stopifnot(all(num_sensors_per_type <= num_nodes))
+
+    # generate the sensor presence matrix
+    res <- matrix(
+        0L,
+        nrow = num_nodes,
+        ncol = num_types
+    )
+    for(tnd in 1L:num_types) {
+        res[sample(1L:num_nodes, size = num_sensors_per_type[tnd]), tnd] = 1L
+    }
     colnames(res) = paste("type", as.character(1L:num_types), sep = "_")
     rownames(res) = paste("node", as.character(1L:num_nodes), sep = "_")
     res # RETURN
