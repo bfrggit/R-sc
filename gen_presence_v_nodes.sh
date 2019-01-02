@@ -21,7 +21,7 @@ for num_nodes in `seq 5 5 200`; do
         fn=$(realpath -m "${output_dir}/presence_${num_nodes}_${PROB}_${random_seed}.RData")
         echo ${fn}
 
-        prep/prep_presence_unif.R \
+        prep/prep_presence_sample_per_type.R \
             -O ${fn} -s ${random_seed} \
             -K ${NUM_TYPES} -N ${num_nodes} -p ${PROB} 
         if [ $? -ne 0 ]; then exit $?; fi

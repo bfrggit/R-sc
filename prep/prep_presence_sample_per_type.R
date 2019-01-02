@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 #
-# prep_presence_unif.R
+# prep_presence_sample_per_type.R
 #
-# Created: 2018-08-01
+# Created: 2019-01-01
 #  Author: Charles Zhu
 
 suppressPackageStartupMessages(require(optparse))
@@ -60,10 +60,14 @@ if(!is.na(opt$random_seed)) {
 
 source("lib/generator.R")
 
-presence <- generate_sensor_presence_unif(
+presence <- generate_sensor_presence_sample_per_type(
     num_nodes = NUM_NODES,
     num_types = NUM_TYPES_PER_NODE,
-    prob      = opt$prob / 100.0
+    num_sensors_per_type = as.integer(
+        round(
+            rep(NUM_NODES, NUM_TYPES_PER_NODE) * opt$prob / 100
+        )
+    )
 )
 
 save(
