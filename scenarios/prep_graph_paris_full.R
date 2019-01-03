@@ -12,7 +12,7 @@ rm(list = ls())
 source("lib/basic.R")
 
 MOVEMENT_SPEED_PARIS <- 1   # m-per-sec
-SPOT_ID_OFFSET <- 0L
+SPOT_ID_OFFSET <- 2L
 lockBinding("MOVEMENT_SPEED_PARIS", globalenv())
 lockBinding("SPOT_ID_OFFSET", globalenv())
 
@@ -36,8 +36,8 @@ stopifnot(all(df_dist_paris$spot_to == as.integer(df_dist_paris$spot_to)))
 
 storage.mode(df_dist_paris$spot_from) <- "integer"
 storage.mode(df_dist_paris$spot_to) <- "integer"
-df_dist_paris$spot_from <- df_dist_paris$spot_from - SPOT_ID_OFFSET + 1L
-df_dist_paris$spot_to <- df_dist_paris$spot_to - SPOT_ID_OFFSET + 1L
+df_dist_paris$spot_from <- df_dist_paris$spot_from + SPOT_ID_OFFSET
+df_dist_paris$spot_to <- df_dist_paris$spot_to + SPOT_ID_OFFSET
 
 # create map mat for each floor
 NUM_SPOTS_FULL <- max(df_dist_paris[, 1L:2L])
@@ -59,6 +59,8 @@ save(
 
 # fill in the adj matrix
 map_graph_adj_matrix <- round(map_paris / MOVEMENT_SPEED_PARIS)
+map_graph_adj_matrix[1L, SPOT_ID_OFFSET] <-
+    map_graph_adj_matrix[SPOT_ID_OFFSET, 1L] <- 1L
 storage.mode(map_graph_adj_matrix) <- "integer"
 colnames(map_graph_adj_matrix) <- rownames(map_graph_adj_matrix) <-
     z_nd_str("spot", NUM_SPOTS_FULL)
