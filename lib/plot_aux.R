@@ -63,7 +63,9 @@ VAL_NAMES <<- c(
     "calibration_cost",
     "movement_cost",
     "worker_overhead",
-    "sum"
+    "sum",
+    "selector_time",
+    "path_planner_time"
 )
 lockBinding("VAL_NAMES", globalenv())
 
@@ -72,7 +74,9 @@ VAL_COLUMN_NAMES <<- c(
     "calibration_cost"          = "weighted_cali",
     "movement_cost"             = "weighted_move",
     "worker_overhead"           = "n_path_average",
-    "sum"                       = "weighted_sum"
+    "sum"                       = "weighted_sum",
+    "selector_time"             = "sl_time_per_iter",
+    "path_planner_time"         = "pp_time_per_iter"
 )
 lockBinding("VAL_COLUMN_NAMES", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_COLUMN_NAMES))
@@ -83,7 +87,9 @@ VAL_Y_LABELS <<- c(
     "calibration_cost"          = "Weighted calibration cost",
     "movement_cost"             = "Weighted movement cost",
     "worker_overhead"           = "Average number of workers",
-    "sum"                       = "Total cost"
+    "sum"                       = "Total cost",
+    "selector_time"             = "Selector running time",
+    "path_planner_time"         = "Path planner running time"
 )
 lockBinding("VAL_Y_LABELS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_Y_LABELS))
@@ -94,7 +100,9 @@ VAL_PLOT_FILENAME_PATTERNS <<- c(
     "calibration_cost"          = "%s_%s_cal.pdf",
     "movement_cost"             = "%s_%s_mov.pdf",
     "worker_overhead"           = "%s_%s_wkr.pdf",
-    "sum"                       = "%s_%s_sum.pdf"
+    "sum"                       = "%s_%s_sum.pdf",
+    "selector_time"             = "%s_%s_tsl.pdf",
+    "path_planner_time"         = "%s_%s_tpp.pdf"
 )
 lockBinding("VAL_PLOT_FILENAME_PATTERNS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_PLOT_FILENAME_PATTERNS))
