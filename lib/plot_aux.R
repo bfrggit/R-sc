@@ -73,7 +73,7 @@ VAL_COLUMN_NAMES <<- c(
     "iteration_overhead"        = "weighted_overhead",
     "calibration_cost"          = "weighted_cali",
     "movement_cost"             = "weighted_move",
-    "worker_overhead"           = "n_path_average",
+    "worker_overhead"           = "n_path_per_iter",
     "sum"                       = "weighted_sum",
     "selector_time"             = "sl_time_per_iter",
     "path_planner_time"         = "pp_time_per_iter"
@@ -87,7 +87,7 @@ VAL_Y_LABELS <<- c(
     "calibration_cost"          = "Weighted calibration cost",
     "movement_cost"             = "Weighted movement cost",
     "worker_overhead"           = "Average number of workers",
-    "sum"                       = "Total cost",
+    "sum"                       = "Average cost",
     "selector_time"             = "Selector running time",
     "path_planner_time"         = "Path planner running time"
 )
