@@ -14,6 +14,7 @@ source("lib/basic.R")
 MOVEMENT_SPEED_PARIS <- 1   # m-per-sec
 SPOT_ID_OFFSET <- 0L
 lockBinding("MOVEMENT_SPEED_PARIS", globalenv())
+lockBinding("SPOT_ID_OFFSET", globalenv())
 
 # read pairwise travel distance data from raw scenario files
 df_dist_paris <- read.table(
