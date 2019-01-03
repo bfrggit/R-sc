@@ -25,6 +25,7 @@ ggplot_theme <<- theme_light() +
 scale_names_path_planner <<- c(
     "each"              = "Each",
     "ompr_glpk"         = "GLPK",
+    "ompr_gurobi"       = "Gurobi",
     "greedy_1"          = "Greedy",
     "ga_grd_1"          = "GA"
 )
@@ -35,6 +36,7 @@ scale_color_path_planner <<- scale_color_manual(
     values = c(
         "each"          = "grey",
         "ompr_glpk"     = "navy",
+        "ompr_gurobi"   = "maroon",
         "greedy_1"      = "orangered",
         "ga_grd_1"      = "olivedrab"
     )
@@ -46,6 +48,7 @@ scale_shape_path_planner <<- scale_shape_manual(
     values = c(
         "each"          = 16,
         "ompr_glpk"     = 15,
+        "ompr_gurobi"   = 18,
         "greedy_1"      = 4,
         "ga_grd_1"      = 7
     )
