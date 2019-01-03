@@ -1,7 +1,7 @@
 # run.R
 #
 # Created: 2018-10-05
-# Updated: 2019-01-02
+# Updated: 2018-12-17
 #  Author: Charles Zhu
 #
 # derived from run_no_move.R
@@ -145,9 +145,8 @@ run <<- function(
 
         if(verbose) {
             cat(
-                sprintf("sel = %d at %d",
-                    sum(selected_sensors),
-                    sum(selected_spots)),
+                sprintf("sel_sensors = %d,", sum(selected_sensors)),
+                sprintf("sel_spots = %d", sum(selected_spots)),
                 "->", ""
             )
         }
@@ -205,9 +204,8 @@ run <<- function(
 
         if(verbose) {
             cat(
-                sprintf("move_c = %d,", move_cost[it]),
-                sprintf("worker = %d,", num_paths[it]),
-                ""
+                sprintf("move_cost = %d,", move_cost[it]),
+                sprintf("num_paths = %d\n", num_paths[it])
             )
         }
 
@@ -228,10 +226,6 @@ run <<- function(
         intervals[it] <- ttni <- min(ttnc_after)
         ttnc <- ttnc_after - ttni
         acc_intervals <- acc_intervals + ttni
-
-        if(verbose) {
-            cat(sprintf("ttni = %d\n", ttni))
-        }
     }
 
     if(verbose) {
