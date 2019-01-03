@@ -1,6 +1,7 @@
 # plot_aux.R
 #
 # Created: 2018-10-08
+# Updated: 2019-01-02
 #  Author: Charles Zhu
 #
 if(!exists("EX_PLOT_AUX_R")) {
@@ -25,13 +26,15 @@ read_multiple_csv <<- function(files) {
 
 VAR_NAMES <<- c(
     "number_nodes",
-    "probability_presence"
+    "probability_presence",
+    "number_sensors"
 )
 lockBinding("VAR_NAMES", globalenv())
 
 VAR_COLUMN_NAMES <<- c(
     "number_nodes"              = "num_nodes",
-    "probability_presence"      = "prob"
+    "probability_presence"      = "prob",
+    "number_sensors"            = "num_sensors"
 )
 lockBinding("VAR_COLUMN_NAMES", globalenv())
 stopifnot(length(VAR_NAMES) == length(VAR_COLUMN_NAMES))
@@ -39,7 +42,8 @@ stopifnot(all(VAR_NAMES == names(VAR_COLUMN_NAMES)))
 
 VAR_PLOT_FILENAME_ENTRIES <<- c(
     "number_nodes"              = "v_nodes",
-    "probability_presence"      = "v_prob"
+    "probability_presence"      = "v_prob",
+    "number_sensors"            = "v_prob" # new presentation of probability
 )
 lockBinding("VAR_PLOT_FILENAME_ENTRIES", globalenv())
 stopifnot(length(VAR_NAMES) == length(VAR_PLOT_FILENAME_ENTRIES))
@@ -47,7 +51,8 @@ stopifnot(all(VAR_NAMES == names(VAR_PLOT_FILENAME_ENTRIES)))
 
 VAR_X_LABELS <<- c(
     "number_nodes"              = "Number of nodes",
-    "probability_presence"      = "Probability of sensor presence"
+    "probability_presence"      = "Probability of sensor presence",
+    "number_sensors"            = "Number of sensors"
 )
 lockBinding("VAR_X_LABELS", globalenv())
 stopifnot(length(VAR_NAMES) == length(VAR_X_LABELS))

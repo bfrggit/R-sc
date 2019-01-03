@@ -1,6 +1,7 @@
 # naive_sel_lim.R
 #
 # Created: 2018-12-13
+# Updated: 2019-01-02
 #  Author: Charles Zhu
 #
 if(!exists("EX_NAIVE_SEL_LIM_R")) {
@@ -54,7 +55,8 @@ lim_add_nodal <- function(st_cali_t, s_presence,
         stopifnot(is.matrix(res))
         stopifnot(nrow(res) == NUM_NODES)
         stopifnot(ncol(res) == NUM_TYPES)
-        stopifnot(res <= s_presence)
+        stopifnot(all(res <= s_presence))
+        stopifnot(all(res >= s_selected))
     }
 
     res # RETURN
@@ -113,7 +115,8 @@ lim_add_local <- function(st_cali_t, n_location, s_presence,
         stopifnot(is.matrix(res))
         stopifnot(nrow(res) == NUM_NODES)
         stopifnot(ncol(res) == NUM_TYPES)
-        stopifnot(res <= s_presence)
+        stopifnot(all(res <= s_presence))
+        stopifnot(all(res >= s_selected))
     }
 
     res # RETURN
