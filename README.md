@@ -113,7 +113,7 @@ $ simu/simu.R \
 --selector=interval_1 \
 --paranoid \
 -x 1e+4 -y 1 -z 5 -w 0 \
---max_cost_worker=3600 \
+--max_cost_worker=14400 \
 --verbose \
 --num_iters=5 \
 --path_planner=combined_1 \
