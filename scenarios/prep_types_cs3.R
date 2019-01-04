@@ -3,6 +3,7 @@
 # prep_types_cs3.R
 #
 # Created: 2019-01-01
+# Updated: 2019-01-03
 #  Author: Charles Zhu
 #
 # as always, run this script from the project root
@@ -26,7 +27,17 @@ st_specs$st_period <- sensor_type_period
 st_specs$st_cali_t <- sensor_type_cali_t
 
 save(
-    NUM_TYPES,
-    st_specs,
+    NUM_TYPES, st_specs,
     file = "scenarios/types_cs3.RData"
+)
+
+sensor_type_period["gas_2"]         <- 10L
+sensor_type_period["gas_6"]         <- 7L
+sensor_type_period["temperature"]   <- 15L
+sensor_type_period["video"]         <- 91L
+st_specs$st_period <- sensor_type_period
+
+save(
+    NUM_TYPES, st_specs,
+    file = "scenarios/types_cs3_fire.RData"
 )
