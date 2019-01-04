@@ -40,7 +40,9 @@ df_dist_paris$spot_from <- df_dist_paris$spot_from + SPOT_ID_OFFSET
 df_dist_paris$spot_to <- df_dist_paris$spot_to + SPOT_ID_OFFSET
 
 # create map mat for each floor
-NUM_SPOTS_FULL <- max(df_dist_paris[, 1L:2L])
+NUM_SPOTS <- NUM_SPOTS_FULL <- max(df_dist_paris[, 1L:2L])
+lockBinding("NUM_SPOTS_FULL", globalenv())
+
 map_paris <- matrix(0L, nrow = NUM_SPOTS_FULL, ncol = NUM_SPOTS_FULL)
 for(rnd in 1L:nrow(df_dist_paris)) {
     map_paris[df_dist_paris$spot_from[rnd], df_dist_paris$spot_to[rnd]] <-
@@ -87,7 +89,7 @@ map_alternative_graph <- graph_from_adjacency_matrix(
 )
 
 save(
-    NUM_SPOTS_FULL,
+    NUM_SPOTS_FULL, NUM_SPOTS,
     map_graph_adj_matrix, map_graph,
     map_graph_distances, map_alternative_graph,
     file = "scenarios/graph_paris_full.RData"
