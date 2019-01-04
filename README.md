@@ -4,6 +4,15 @@ This introduction page only covers the installation of R and its packages needed
 
 Details on the use of this project are coming soon...
 
+## Git LFS
+
+This project leverages [Git LFS](https://github.com/git-lfs/git-lfs/) to manage archives of old scripts, results, and plots.
+
+In order to clone or pull this project in full, make sure Git LFS is correctly installed and initialized.
+
+If you do not plan to contribute to this project, you may also choose to download a **manually** created project archive in [Downloads](https://bitbucket.org/bfrgbit/r-sc/downloads/).
+Note that automatically created archives for branches and tags will not contain Git LFS files due to Bitbucket limitations.
+
 ## Preparing environment
 
 ### Installation of R
