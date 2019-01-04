@@ -17,8 +17,11 @@ Note that automatically created archives for branches and tags will not contain 
 ### Installation of R
 
 Refer to [Download and Install R](https://cloud.r-project.org/).
+Note that if you are using Linux (e.g. Ubuntu), you will need to add the official repo of the R project. The Linux distribution's repo does not always have the latest versions of R.
+How this can be done is also described in the installation procedures (the link above).
 
-This project has been tested working with R versions 3.5.0, 3.5.1, and 3.5.2.
+This project has been tested working with R versions **3.5.0**, **3.5.1**, and **3.5.2**.
+It is also known now that R 3.2.3 will not make this project work because OMPR (see dependencies) does not have a build for 3.2.3.
 
 Note that the Gurobi MIP solver may require specific versions of R installation. If you plan to test out the Gurobi solver, please refer to the Gurobi documentation for the requirements.
 
