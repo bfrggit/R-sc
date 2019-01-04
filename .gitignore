@@ -15,4 +15,5 @@
 !/scenarios/graph_*_full.RData
 !/scenarios/types_*.RData
 !/scenarios/location_*_example.RData
+!/scenarios/presence_*_example.RData
 !/scenarios/**/*.csv
