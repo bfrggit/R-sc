@@ -63,7 +63,7 @@ for(val_index in VAL_NAMES) {
     scaled_yval <- sort(df[df$var == 12, ]$val, decreasing = TRUE)
 
     if(val_index == "solver_time") {
-                scaled_ymax <- scaled_yval[which(scaled_yval < 500)][1]
+                scaled_ymax <- scaled_yval[scaled_yval < 500][1]
     } else {    scaled_ymax <- scaled_yval[1] }
 
     plot_obj_scaled <- plot_obj_full +
