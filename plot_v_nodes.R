@@ -42,6 +42,7 @@ source("lib/plot_theme.R")
 plot_ls <- list()
 for(val_index in VAL_NAMES) {
     df = df_ls[[val_index]]
+    df <- df[df$selector %in% names(scale_names_selector), ]
     plot_ls[[val_index]] <- ggplot(data = df, aes(x = var)) +
         ggplot_theme +
         xlab(VAR_X_LABELS[var_index]) +
@@ -61,7 +62,7 @@ for(val_index in VAL_NAMES) {
             size = 2,
             data = subset(df, var %% 10L == 0L)
         ) + scale_color_selector + scale_shape_selector +
-        guides(color = guide_legend(nrow = 1, title.position = "left"))
+        guides(color = guide_legend(nrow = 2, title.position = "left"))
 }
 
 dir.create(path = dirname(sprintf("%s_", output_prefix)), showWarnings = FALSE)
