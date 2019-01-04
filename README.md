@@ -4,6 +4,8 @@ This introduction page only covers the installation of R and its packages needed
 
 Details on the use of this project are coming soon...
 
+## Preparing environment
+
 ### Installation of R
 
 Refer to [Download and Install R](https://cloud.r-project.org/).
@@ -44,3 +46,11 @@ Plotting batch simulation results requires the following R packages:
 - `ggplot2`: Data visualization (i.e. generation of good-looking plots).
 - `reshape2`: Data pre-processing.
 - `Cairo`: More advanced vector graphics, used to generate PDF files with embedded fonts.
+
+## Running R scripts
+
+All the R scripts in this project need to be run from the **project root**.
+The project root is the folder you get when you run `git clone` or when you extract this project from an archive.
+
+Change your working directory (a.k.a. PWD) to the **project root** and run all R scripts there, even if the script itself does not reside in the project root.
+
