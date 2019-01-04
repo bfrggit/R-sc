@@ -55,10 +55,76 @@ Plotting batch simulation results requires the following R packages:
 - `reshape2`: Data pre-processing.
 - `Cairo`: More advanced vector graphics, used to generate PDF files with embedded fonts.
 
-## Running R scripts
+## Important notice on running R scripts
 
 All the R scripts in this project need to be run from the **project root**.
 The project root is the folder you get when you run `git clone` or when you extract this project from an archive.
 
 Change your working directory (a.k.a. PWD) to the **project root** and run all R scripts there, even if the script itself does not reside in the project root.
 
+## Simulations
+
+The main script for running simulations is `simu/simu.R`.
+
+If you are using Linux or macOS and have cloned this project with Git, this script should be executable already. Simply change into the project root and run it with `simu/simu.R`.
+If it is not yet executable, you can manually change its mode or run it with `Rscript simu/simu.R`.
+
+Let's assume that you have installed all necessary packages.
+Running the script without parameters will likely result in its usage page, where you can learn how to provide the simulation with datasets.
+
+### Datasets
+
+Simulations need at least **four** (4) data files to run:
+
+- Sensor type specification: Calibration period and time.
+- Distance (movement cost) matrix: Shortest paths between pairs of spots.
+- Node deployment: Location of the nodes.
+- Sensor presence: Sensor type availability on the nodes.
+
+There are two ways to get these data:
+
+1. Generate them using synthetic data generators.
+2. Parse real-world traces.
+
+The following commands can generate the dataset for the Paris scenario, as long as the raw data files (`route` and `nodes`) are available in `scenarios/raw_paris_tsv`.
+
+```sh
+$ scenarios/prep_types_paris.R
+$ scenarios/prep_graph_paris_full.R
+$ scenarios/prep_nodes_paris_example.R
+```
+
+### Single-case simulation
+
+Run a single-case simulation to make sure the environment is configured correctly and the current code-base is intact.
+You may also run a single-case simulation to **create individual paths** for mobile calibrators, which can be exported to interface with other applications.
+
+The following command runs a single-case simulation using the dataset generated above.
+
+```sh
+$ simu/simu.R \
+--sensor_file=scenarios/types_paris.RData \
+--location_file=scenarios/location_paris_example.RData \
+--presence_file=scenarios/presence_paris_example.RData \
+--distance_file=scenarios/graph_paris_full.RData \
+--selector=interval_1 \
+--paranoid \
+-x 1e+4 -y 1 -z 5 -w 0 \
+--max_cost_worker=3600 \
+--verbose \
+--num_iters=5 \
+--path_planner=combined_1 \
+--output_file=tmp/example_paris_short.RData \
+--keep_history
+```
+
+Note that `--keep_history` is required if you would like to export paths later.
+The paths will be stored in the output file specified in the command-line.
+
+To export the paths, use
+
+```sh
+$ ./parse_simu_output.R \
+-I tmp/example_paris_short.RData \
+--output_directory=tmp/example_paris_short_txt
+```
