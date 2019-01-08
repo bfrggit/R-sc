@@ -1,7 +1,7 @@
 # plot_aux.R
 #
 # Created: 2018-10-08
-# Updated: 2019-01-02
+# Updated: 2019-01-07
 #  Author: Charles Zhu
 #
 if(!exists("EX_PLOT_AUX_R")) {
@@ -65,7 +65,12 @@ VAL_NAMES <<- c(
     "worker_overhead",
     "sum",
     "selector_time",
-    "path_planner_time"
+    "path_planner_time",
+    "interval_mean",
+    "calibration_time",
+    "movement_time",
+    "calibration_time_per_iter",
+    "movement_time_per_iter"
 )
 lockBinding("VAL_NAMES", globalenv())
 
@@ -76,7 +81,12 @@ VAL_COLUMN_NAMES <<- c(
     "worker_overhead"           = "n_path_per_iter",
     "sum"                       = "weighted_sum",
     "selector_time"             = "sl_time_per_iter",
-    "path_planner_time"         = "pp_time_per_iter"
+    "path_planner_time"         = "pp_time_per_iter",
+    "interval_mean"             = "interval_mean",
+    "calibration_time"          = "cali_t_average",
+    "movement_time"             = "move_d_average",
+    "calibration_time_per_iter" = "cali_t_per_iter",
+    "movement_time_per_iter"    = "move_d_per_iter"
 )
 lockBinding("VAL_COLUMN_NAMES", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_COLUMN_NAMES))
@@ -89,7 +99,12 @@ VAL_Y_LABELS <<- c(
     "worker_overhead"           = "Average number of workers",
     "sum"                       = "Average cost",
     "selector_time"             = "Selector running time",
-    "path_planner_time"         = "Path planner running time"
+    "path_planner_time"         = "Path planner running time",
+    "interval_mean"             = "Mean interval",
+    "calibration_time"          = "Average calibration time",
+    "movement_time"             = "Average movement time",
+    "calibration_time_per_iter" = "Average cali. time per it.",
+    "movement_time_per_iter"    = "Average move. time per it."
 )
 lockBinding("VAL_Y_LABELS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_Y_LABELS))
@@ -102,7 +117,12 @@ VAL_PLOT_FILENAME_PATTERNS <<- c(
     "worker_overhead"           = "%s_%s_wkr.pdf",
     "sum"                       = "%s_%s_sum.pdf",
     "selector_time"             = "%s_%s_tsl.pdf",
-    "path_planner_time"         = "%s_%s_tpp.pdf"
+    "path_planner_time"         = "%s_%s_tpp.pdf",
+    "interval_mean"             = "%s_%s_int.pdf",
+    "calibration_time"          = "%s_%s_cat.pdf",
+    "movement_time"             = "%s_%s_mvt.pdf",
+    "calibration_time_per_iter" = "%s_%s_cpi.pdf",
+    "movement_time_per_iter"    = "%s_%s_mpi.pdf"
 )
 lockBinding("VAL_PLOT_FILENAME_PATTERNS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_PLOT_FILENAME_PATTERNS))

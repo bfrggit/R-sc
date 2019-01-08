@@ -8,6 +8,7 @@
 *.bak
 *.RData
 *.csv
+*.pdf
 *.png
 
 /tmp
