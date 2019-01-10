@@ -10,7 +10,7 @@ print_usage() {
     echo >&2 "Usage: $0 NUM_NODES SELECTOR CASE_LOC PROJ_ROOT OUTPUT_FILE"
 }
 
-if [ $# -ne 6 ]; then
+if [ $# -ne 5 ]; then
     print_usage
     echo >&2
     echo >&2 "Illegal number of parameters"
