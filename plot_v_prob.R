@@ -67,6 +67,12 @@ for(val_index in VAL_NAMES) {
             size = 2
         ) + scale_color_selector + scale_shape_selector +
         guides(color = guide_legend(nrow = 2, title.position = "left"))
+
+    if(val_index %in% c("selector_time", "path_planner_time")) {
+        plot_ls[[val_index]] <- plot_ls[[val_index]] +
+            theme(legend.justification = c(0, 1)) +
+            theme(legend.position = c(0, 1))
+    }
 }
 
 dir.create(path = dirname(sprintf("%s_", output_prefix)), showWarnings = FALSE)
