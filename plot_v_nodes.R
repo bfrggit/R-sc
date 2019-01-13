@@ -59,7 +59,7 @@ for(val_index in VAL_NAMES) {
             width = (max(df$var) - min(df$var)) * 0.02
         ) + geom_point(
             aes(y = val[, "mean"], color = selector, shape = selector),
-            size = 2,
+            size = 3,
             data = subset(df, var %% 10L == 0L)
         ) + scale_color_selector + scale_shape_selector +
         guides(color = guide_legend(nrow = 2, title.position = "left"))

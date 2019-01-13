@@ -64,7 +64,7 @@ for(val_index in VAL_NAMES) {
             width = (max(df$vrx) - min(df$vrx)) * 0.02
         ) + geom_point(
             aes(y = val[, "mean"], color = selector, shape = selector),
-            size = 2
+            size = 3
         ) + scale_color_selector + scale_shape_selector +
         guides(color = guide_legend(nrow = 2, title.position = "left"))
 

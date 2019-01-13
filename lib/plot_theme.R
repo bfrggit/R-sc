@@ -1,7 +1,7 @@
 # plot_theme.R
 #
 # Created: 2018-10-08
-# Updated: 2019-01-02
+# Updated: 2019-01-12
 #  Author: Charles Zhu
 #
 # Color theme for plots
@@ -13,10 +13,9 @@ if(!exists("EX_PLOT_THEME_R")) {
 library(ggplot2)
 
 ggplot_theme <<- theme_light() +
-    theme(axis.text = element_text(size = 16)) +
+    theme(axis.text = element_text(size = 16, color = "black")) +
     theme(axis.title = element_text(size = 18)) +
-    theme(legend.text = element_text(size = 16)) +
-    theme(legend.text = element_text(color = "gray30")) +
+    theme(legend.text = element_text(size = 16, color = "black")) +
     theme(legend.title = element_text(size = 18)) + # element_blank())
     theme(legend.background = element_rect(
         linetype = "solid", color = "gray30")) +
@@ -40,10 +39,10 @@ scale_color_selector <<- scale_color_manual(
         "minimal"       = "brown",
         "all"           = "tomato",
         # "nodal"         = "purple",
-        "local"         = "blue",
-        # "nodal_lim"     = "mediumpurple",
+        "local"         = "mediumpurple",
+        # "nodal_lim"     = "blue",
         "local_lim"     = "skyblue",
-        "interval_1"    = "olivedrab"
+        "interval_1"    = "black"
     )
 )
 
