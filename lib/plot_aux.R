@@ -1,7 +1,7 @@
 # plot_aux.R
 #
 # Created: 2018-10-08
-# Updated: 2019-01-07
+# Updated: 2019-01-16
 #  Author: Charles Zhu
 #
 if(!exists("EX_PLOT_AUX_R")) {
@@ -98,13 +98,13 @@ VAL_Y_LABELS <<- c(
     "movement_cost"             = "Weighted movement cost",
     "worker_overhead"           = "Average number of workers",
     "sum"                       = "Average cost",
-    "selector_time"             = "Selector running time",
-    "path_planner_time"         = "Path planner running time",
-    "interval_mean"             = "Mean interval",
-    "calibration_time"          = "Average calibration time",
-    "movement_time"             = "Average movement time",
-    "calibration_time_per_iter" = "Average cali. time per it.",
-    "movement_time_per_iter"    = "Average move. time per it."
+    "selector_time"             = "Selector running time (sec)",
+    "path_planner_time"         = "Path planner running time (sec)",
+    "interval_mean"             = "Mean gap between iter. (day)",
+    "calibration_time"          = "Average calibration time (sec)",
+    "movement_time"             = "Average movement time (sec)",
+    "calibration_time_per_iter" = "Average cali. time per it. (sec)",
+    "movement_time_per_iter"    = "Average move. time per it. (sec)"
 )
 lockBinding("VAL_Y_LABELS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_Y_LABELS))

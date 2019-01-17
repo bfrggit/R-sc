@@ -52,9 +52,14 @@ for(val_index in VAL_NAMES) {
         geom_line(aes(y = val[, "mean"], color = path_planner), size = 1) +
         geom_point(
             aes(y = val[, "mean"], color = path_planner, shape = path_planner),
-            size = 2
+            size = 3
         ) + scale_color_path_planner + scale_shape_path_planner +
-        guides(color = guide_legend(nrow = 2, title.position = "left"))
+        guides(color = guide_legend(
+                nrow = 3,
+                title.position = "top",
+                byrow = TRUE
+            )
+        )
 
     # generate a scaled version of the same plot to focus on smaller var
     # limits are hard-coded

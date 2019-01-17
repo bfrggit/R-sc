@@ -62,7 +62,12 @@ for(val_index in VAL_NAMES) {
             size = 3,
             data = subset(df, var %% 10L == 0L)
         ) + scale_color_selector + scale_shape_selector +
-        guides(color = guide_legend(nrow = 2, title.position = "left"))
+        guides(color = guide_legend(
+                nrow = 2,
+                title.position = "top",
+                byrow = TRUE
+            )
+        )
 
     if(val_index %in% c("selector_time", "path_planner_time")) {
         plot_ls[[val_index]] <- plot_ls[[val_index]] +

@@ -1,7 +1,7 @@
 # plot_theme.R
 #
 # Created: 2018-10-08
-# Updated: 2019-01-12
+# Updated: 2019-01-16
 #  Author: Charles Zhu
 #
 # Color theme for plots
@@ -27,9 +27,9 @@ scale_names_selector <<- c(
     "all"               = "All",
     # "nodal"             = "Nodal",
     "local"             = "Local",
-    # "nodal_lim"         = "Nodal B",
-    "local_lim"         = "Local B",
-    "interval_1"        = "Interval"
+    # "nodal_lim"         = "Nodal bnd.",
+    "local_lim"         = "Local bnd.",
+    "interval_1"        = "TTNI-driven"
 )
 
 scale_color_selector <<- scale_color_manual(

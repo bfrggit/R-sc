@@ -1,6 +1,7 @@
 # plot_aux_t_pp.R
 #
 # Created: 2019-01-02
+# Updated: 2019-01-16
 #  Author: Charles Zhu
 #
 if(!exists("EX_PLOT_AUX_T_PP_R")) {
@@ -66,9 +67,9 @@ stopifnot(length(VAL_NAMES) == length(VAL_COLUMN_NAMES))
 stopifnot(all(VAL_NAMES == names(VAL_COLUMN_NAMES)))
 
 VAL_Y_LABELS <<- c(
-    "solver_time"               = "Path planner running time",
+    "solver_time"               = "Path planner running time (sec)",
     "number_workers"            = "Number of workers",
-    "total_distance"            = "Total distance"
+    "total_distance"            = "Total movement time (sec)"
 )
 lockBinding("VAL_Y_LABELS", globalenv())
 stopifnot(length(VAL_NAMES) == length(VAL_Y_LABELS))
